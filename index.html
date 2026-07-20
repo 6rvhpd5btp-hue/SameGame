@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#008080">
+  <meta name="application-name" content="Same Game">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Same Game">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <title>Same Game for Windows</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --win-gray: #c0c0c0;
+      --win-light: #ffffff;
+      --win-mid: #808080;
+      --win-dark: #000000;
+      --title-left: #008080;
+      --title-right: #008080;
+      --board-green: #00bf00;
+      --menu-blue: #000080;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-width: 320px;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #008080;
+      color: #000;
+      font-family: "MS Sans Serif", Arial, Helvetica, sans-serif;
+      user-select: none;
+      overscroll-behavior: none;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding-top: max(4px, env(safe-area-inset-top));
+      padding-right: max(4px, env(safe-area-inset-right));
+      padding-bottom: max(4px, env(safe-area-inset-bottom));
+      padding-left: max(4px, env(safe-area-inset-left));
+    }
+
+    button, input, select { font: inherit; }
+    button { touch-action: manipulation; }
+
+    .window {
+      width: 644px;
+      max-width: 100%;
+      overflow: visible;
+      border-top: 2px solid var(--win-light);
+      border-left: 2px solid var(--win-light);
+      border-right: 2px solid var(--win-dark);
+      border-bottom: 2px solid var(--win-dark);
+      background: var(--win-gray);
+      box-shadow: 1px 1px 0 #000;
+    }
+
+    .titlebar {
+      height: 23px;
+      margin: 1px;
+      padding: 2px 2px 2px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+      background: linear-gradient(90deg, var(--title-left), var(--title-right));
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .title-controls { display: flex; gap: 2px; }
+
+    .title-button {
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #000;
+      border-bottom: 2px solid #000;
+      background: var(--win-gray);
+      color: #000;
+      font: 700 10px/1 Arial, sans-serif;
+    }
+
+    .menubar {
+      height: 25px;
+      display: flex;
+      align-items: center;
+      padding: 0 3px;
+      position: relative;
+      z-index: 20;
+      background: var(--win-gray);
+      border-bottom: 1px solid #808080;
+    }
+
+    .menu-wrap { position: relative; }
+
+    .menu-button {
+      height: 23px;
+      padding: 2px 7px;
+      border: 0;
+      background: transparent;
+      color: #000;
+      font-size: 14px;
+      line-height: 18px;
+    }
+
+    .menu-button:hover,
+    .menu-button[aria-expanded="true"] {
+      color: #fff;
+      background: var(--menu-blue);
+    }
+
+    .menu {
+      display: none;
+      position: absolute;
+      top: 23px;
+      left: 0;
+      min-width: 196px;
+      padding: 2px;
+      background: var(--win-gray);
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #000;
+      border-bottom: 2px solid #000;
+      box-shadow: 2px 2px 0 rgba(0,0,0,.45);
+    }
+
+    .menu.open { display: block; }
+
+    .menu-item,
+    .submenu-label {
+      width: 100%;
+      min-height: 22px;
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 2px;
+      padding: 2px 5px;
+      border: 0;
+      background: transparent;
+      color: #000;
+      text-align: left;
+      font-size: 13px;
+      line-height: 18px;
+      white-space: nowrap;
+    }
+
+    .menu-item:hover,
+    .menu-item:focus-visible,
+    .submenu-wrap:hover > .submenu-label,
+    .submenu-wrap:focus-within > .submenu-label {
+      color: #fff;
+      background: var(--menu-blue);
+      outline: none;
+    }
+
+    .check { width: 14px; text-align: center; font-weight: 700; }
+    .shortcut { margin-left: 18px; }
+    .arrow { margin-left: 12px; font-size: 10px; }
+
+    .menu-separator {
+      height: 2px;
+      margin: 3px 2px;
+      border-top: 1px solid #808080;
+      border-bottom: 1px solid #fff;
+    }
+
+    .submenu-wrap { position: relative; }
+
+    .submenu {
+      display: none;
+      position: absolute;
+      top: -4px;
+      left: calc(100% - 3px);
+      min-width: 174px;
+      padding: 2px;
+      background: var(--win-gray);
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #000;
+      border-bottom: 2px solid #000;
+      box-shadow: 2px 2px 0 rgba(0,0,0,.45);
+    }
+
+    .submenu-wrap:hover > .submenu,
+    .submenu-wrap:focus-within > .submenu,
+    .submenu-wrap.touch-open > .submenu { display: block; }
+
+    .board-shell {
+      padding: 0;
+      background: var(--win-gray);
+    }
+
+    .board-frame {
+      overflow: hidden;
+      background: var(--board-green);
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      background: var(--board-green);
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      cursor: default;
+      touch-action: none;
+    }
+
+    .statusbar {
+      height: 27px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 201px;
+      padding: 2px;
+      gap: 2px;
+      background: var(--win-gray);
+    }
+
+    .status-panel {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      padding: 1px 5px;
+      overflow: hidden;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      background: #fff;
+      color: #000;
+      font: 700 13px/1 "Courier New", Courier, monospace;
+      white-space: pre;
+    }
+
+    .score-panel { justify-content: center; }
+
+    dialog {
+      width: min(430px, calc(100vw - 24px));
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #000;
+    }
+
+    dialog::backdrop { background: rgba(0,0,0,.32); }
+
+    .dialog-window {
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #000;
+      border-bottom: 2px solid #000;
+      background: var(--win-gray);
+      box-shadow: 3px 3px 0 rgba(0,0,0,.55);
+    }
+
+    .dialog-title {
+      height: 23px;
+      margin: 1px;
+      padding: 4px 5px;
+      color: #fff;
+      background: #008080;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 14px;
+    }
+
+    .dialog-body {
+      padding: 16px 18px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      user-select: text;
+    }
+
+    .dialog-body p { margin: 0 0 10px; }
+    .dialog-body ul { margin: 6px 0 10px 20px; padding: 0; }
+    .dialog-body li { margin: 3px 0; }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 16px 14px;
+    }
+
+    .win-button {
+      min-width: 82px;
+      padding: 4px 12px;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #000;
+      border-bottom: 2px solid #000;
+      background: var(--win-gray);
+      color: #000;
+      font-size: 13px;
+    }
+
+    .win-button:active {
+      border-top-color: #000;
+      border-left-color: #000;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+      padding: 5px 11px 3px 13px;
+    }
+
+    .score-table {
+      width: 100%;
+      border-collapse: collapse;
+      font: 13px/1.5 "Courier New", monospace;
+    }
+
+    .score-table td { padding: 1px 6px; }
+    .score-table td:first-child { width: 38px; text-align: right; }
+    .score-table td:nth-child(2) { text-align: right; }
+    .score-table td:last-child { text-align: left; }
+
+    .color-counts {
+      width: 240px;
+      max-width: 100%;
+      margin: 4px auto 0;
+      font: 13px/1.55 "Courier New", monospace;
+      white-space: pre;
+    }
+
+    .about-mark {
+      width: 54px;
+      height: 54px;
+      margin: 2px auto 12px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+      padding: 4px;
+      border: 2px inset #fff;
+      background: #00bf00;
+      font: 24px/1 "Times New Roman", Times, serif;
+      text-align: center;
+    }
+
+    @media (max-width: 520px) {
+      .statusbar { grid-template-columns: minmax(0, 1fr) 130px; }
+      .score-panel { min-width: 0; }
+      .status-panel { font-size: 11px; }
+      .shortcut { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="window" id="gameWindow" aria-label="Same Game for Windows recreation">
+    <div class="titlebar">
+      <span>Same Game for Windows</span>
+      <span class="title-controls" aria-hidden="true">
+        <span class="title-button">_</span>
+        <span class="title-button">□</span>
+        <span class="title-button">×</span>
+      </span>
+    </div>
+
+    <nav class="menubar" aria-label="Game menus">
+      <div class="menu-wrap">
+        <button class="menu-button" type="button" aria-expanded="false"><u>M</u>enu</button>
+        <div class="menu" role="menu">
+          <button class="menu-item" type="button" data-action="new"><span class="check"></span><span><u>N</u>ew Game</span><span class="shortcut"></span></button>
+          <button class="menu-item" type="button" data-action="replay"><span class="check"></span><span><u>R</u>eplay</span><span></span></button>
+          <div class="menu-separator"></div>
+          <button class="menu-item" type="button" data-action="undo"><span class="check"></span><span><u>U</u>ndo</span><span></span></button>
+          <button class="menu-item" type="button" data-action="scores"><span class="check"></span><span>S<u>c</u>ore</span><span></span></button>
+          <button class="menu-item" type="button" data-action="information"><span class="check"></span><span><u>I</u>nformation</span><span></span></button>
+          <div class="menu-separator"></div>
+          <button class="menu-item radio-item" type="button" data-setting="sound" data-value="on"><span class="check"></span><span><u>S</u>ound On</span><span></span></button>
+          <button class="menu-item radio-item" type="button" data-setting="sound" data-value="off"><span class="check"></span><span>Sound <u>O</u>ff</span><span></span></button>
+          <div class="menu-separator"></div>
+          <button class="menu-item" type="button" data-action="exit"><span class="check"></span><span>E<u>x</u>it</span><span></span></button>
+        </div>
+      </div>
+
+      <div class="menu-wrap">
+        <button class="menu-button" type="button" aria-expanded="false"><u>O</u>ption</button>
+        <div class="menu" role="menu">
+          <div class="submenu-wrap">
+            <button class="submenu-label" type="button" aria-expanded="false"><span class="check"></span><span><u>S</u>ize</span><span class="arrow">▶</span></button>
+            <div class="submenu" role="menu">
+              <button class="menu-item radio-item" type="button" data-setting="size" data-value="normal"><span class="check"></span><span><u>N</u>ormal Size</span><span></span></button>
+              <button class="menu-item radio-item" type="button" data-setting="size" data-value="large"><span class="check"></span><span><u>L</u>arge Size</span><span></span></button>
+            </div>
+          </div>
+          <div class="submenu-wrap">
+            <button class="submenu-label" type="button" aria-expanded="false"><span class="check"></span><span><u>C</u>haracter</span><span class="arrow">▶</span></button>
+            <div class="submenu" role="menu">
+              <button class="menu-item radio-item" type="button" data-setting="character" data-value="panel"><span class="check"></span><span><u>P</u>anel</span><span></span></button>
+              <button class="menu-item radio-item" type="button" data-setting="character" data-value="marble"><span class="check"></span><span><u>M</u>arble</span><span></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-wrap">
+        <button class="menu-button" type="button" aria-expanded="false"><u>H</u>elp</button>
+        <div class="menu" role="menu">
+          <button class="menu-item" type="button" data-action="help"><span class="check"></span><span><u>H</u>elp...</span><span></span></button>
+          <button class="menu-item" type="button" data-action="about"><span class="check"></span><span><u>A</u>bout...</span><span></span></button>
+        </div>
+      </div>
+    </nav>
+
+    <section class="board-shell">
+      <div class="board-frame" id="boardFrame">
+        <canvas id="board" width="640" height="320" aria-label="Same Game board"></canvas>
+      </div>
+    </section>
+
+    <footer class="statusbar">
+      <div class="status-panel" id="markPanel">MARK : 0  (POINT :   0)</div>
+      <div class="status-panel score-panel" id="scorePanel">SCORE :    0</div>
+    </footer>
+  </main>
+
+  <dialog id="textDialog">
+    <div class="dialog-window">
+      <div class="dialog-title" id="textDialogTitle">Same Game</div>
+      <div class="dialog-body" id="textDialogBody"></div>
+      <div class="dialog-actions"><button class="win-button" type="button" data-close-dialog>OK</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="gameOverDialog">
+    <div class="dialog-window">
+      <div class="dialog-title">GAME OVER</div>
+      <div class="dialog-body" id="gameOverBody"></div>
+      <div class="dialog-actions">
+        <button class="win-button" type="button" id="gameOverNew">New Game</button>
+        <button class="win-button" type="button" data-close-dialog>OK</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const TILE = 32;
+      const SIZES = {
+        normal: { cols: 20, rows: 10, label: "NORMAL" },
+        large:  { cols: 25, rows: 15, label: "LARGE" }
+      };
+      const LETTERS = ["A", "B", "C", "D", "E"];
+      const COLORS = ["#0000ff", "#ff0000", "#ff00ff", "#ffff00", "#00ffff"];
+      const DARK_COLORS = ["#0000bf", "#bf0000", "#bf00bf", "#bfbf00", "#00bfbf"];
+      const BOARD_GREEN = "#00bf00";
+      const STORAGE_KEY = "sameGame111ERecreationSettings";
+      const SCORES_KEY = "sameGame111ERecreationScores";
+
+      const canvas = document.getElementById("board");
+      const ctx = canvas.getContext("2d", { alpha: false });
+      const boardFrame = document.getElementById("boardFrame");
+      const gameWindow = document.getElementById("gameWindow");
+      const markPanel = document.getElementById("markPanel");
+      const scorePanel = document.getElementById("scorePanel");
+      const textDialog = document.getElementById("textDialog");
+      const textDialogTitle = document.getElementById("textDialogTitle");
+      const textDialogBody = document.getElementById("textDialogBody");
+      const gameOverDialog = document.getElementById("gameOverDialog");
+      const gameOverBody = document.getElementById("gameOverBody");
+
+      let settings = loadSettings();
+      let sizeKey = settings.size;
+      let character = settings.character;
+      let soundOn = settings.sound;
+      let board = [];
+      let initialBoard = [];
+      let history = [];
+      let score = 0;
+      let hoveredGroup = [];
+      let gameOverRecorded = false;
+      let clearBonusAwarded = false;
+      let audioContext = null;
+      let lastTouchEnd = 0;
+      const sprites = { panel: [[], []], marble: [[], []] };
+
+      function loadSettings() {
+        const defaults = { size: "normal", character: "panel", sound: true };
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          return {
+            size: parsed.size === "large" ? "large" : "normal",
+            character: parsed.character === "marble" ? "marble" : "panel",
+            sound: parsed.sound !== false
+          };
+        } catch (_) {
+          return defaults;
+        }
+      }
+
+      function saveSettings() {
+        settings = { size: sizeKey, character, sound: soundOn };
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (_) {}
+      }
+
+      function cloneBoard(source) {
+        return source.map(column => column.slice());
+      }
+
+      function pointFor(mark) {
+        return mark >= 2 ? (mark - 2) * (mark - 2) : 0;
+      }
+
+      function makeRandomBoard() {
+        const { cols, rows } = SIZES[sizeKey];
+        const result = [];
+        for (let x = 0; x < cols; x += 1) {
+          const col = [];
+          for (let y = 0; y < rows; y += 1) col.push(Math.floor(Math.random() * 5));
+          result.push(col);
+        }
+        return result;
+      }
+
+      function newGame() {
+        board = makeRandomBoard();
+        initialBoard = cloneBoard(board);
+        history = [];
+        score = 0;
+        hoveredGroup = [];
+        gameOverRecorded = false;
+        clearBonusAwarded = false;
+        updateStatus();
+        draw();
+      }
+
+      function replayGame() {
+        board = cloneBoard(initialBoard);
+        history = [];
+        score = 0;
+        hoveredGroup = [];
+        gameOverRecorded = false;
+        clearBonusAwarded = false;
+        updateStatus();
+        draw();
+      }
+
+      function undo() {
+        const previous = history.pop();
+        if (!previous) return;
+        board = cloneBoard(previous.board);
+        score = previous.score;
+        clearBonusAwarded = previous.clearBonusAwarded;
+        hoveredGroup = [];
+        gameOverRecorded = false;
+        updateStatus();
+        draw();
+      }
+
+      function cellExists(x, y) {
+        return x >= 0 && x < board.length && y >= 0 && y < board[x].length;
+      }
+
+      function findGroup(startX, startY) {
+        if (!cellExists(startX, startY)) return [];
+        const value = board[startX][startY];
+        const found = [];
+        const queue = [[startX, startY]];
+        const seen = new Set([`${startX},${startY}`]);
+        while (queue.length) {
+          const [x, y] = queue.shift();
+          found.push([x, y]);
+          const neighbors = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]];
+          for (const [nx, ny] of neighbors) {
+            const key = `${nx},${ny}`;
+            if (!seen.has(key) && cellExists(nx, ny) && board[nx][ny] === value) {
+              seen.add(key);
+              queue.push([nx, ny]);
+            }
+          }
+        }
+        return found;
+      }
+
+      function removeGroup(group) {
+        if (group.length < 2) return;
+        history.push({ board: cloneBoard(board), score, clearBonusAwarded });
+        const byColumn = new Map();
+        for (const [x, y] of group) {
+          if (!byColumn.has(x)) byColumn.set(x, new Set());
+          byColumn.get(x).add(y);
+        }
+        for (const [x, rows] of byColumn.entries()) {
+          board[x] = board[x].filter((_, y) => !rows.has(y));
+        }
+        board = board.filter(column => column.length > 0);
+        score += pointFor(group.length);
+        if (board.length === 0 && !clearBonusAwarded) {
+          score += 1000;
+          clearBonusAwarded = true;
+        }
+        hoveredGroup = [];
+        playMoveSound();
+        updateStatus();
+        draw();
+        if (!hasAnyMove()) window.setTimeout(finishGame, 80);
+      }
+
+      function hasAnyMove() {
+        for (let x = 0; x < board.length; x += 1) {
+          for (let y = 0; y < board[x].length; y += 1) {
+            if (x + 1 < board.length && y < board[x + 1].length && board[x + 1][y] === board[x][y]) return true;
+            if (y + 1 < board[x].length && board[x][y + 1] === board[x][y]) return true;
+          }
+        }
+        return false;
+      }
+
+      function loadScores() {
+        try {
+          const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || "[]");
+          return Array.isArray(scores) ? scores : [];
+        } catch (_) {
+          return [];
+        }
+      }
+
+      function recordScore() {
+        if (gameOverRecorded || score <= 0) return false;
+        const previous = loadScores();
+        const entry = { score, size: SIZES[sizeKey].label, date: new Date().toISOString() };
+        const scores = [...previous, entry].sort((a, b) => b.score - a.score).slice(0, 10);
+        const madeBestTen = scores.includes(entry);
+        try { localStorage.setItem(SCORES_KEY, JSON.stringify(scores)); } catch (_) {}
+        gameOverRecorded = true;
+        return madeBestTen;
+      }
+
+      function finishGame() {
+        const madeBestTen = recordScore();
+        const clearText = board.length === 0 ? "<p><strong>BOARD CLEARED — 1000 POINT BONUS</strong></p>" : "";
+        const bestText = madeBestTen ? "<p><strong>Your Score is in BEST 10 !!</strong></p>" : "";
+        gameOverBody.innerHTML = `${clearText}<p style="text-align:center;font-size:18px"><strong>SCORE : ${String(score).padStart(5, " ")}</strong></p>${bestText}`;
+        showDialog(gameOverDialog);
+      }
+
+      function countsByColor() {
+        const counts = [0, 0, 0, 0, 0];
+        for (const column of board) for (const value of column) counts[value] += 1;
+        return counts;
+      }
+
+      function updateStatus() {
+        const mark = hoveredGroup.length >= 2 ? hoveredGroup.length : 0;
+        markPanel.textContent = `MARK :${String(mark).padStart(2, " ")}  (POINT :${String(pointFor(mark)).padStart(4, " ")})`;
+        scorePanel.textContent = `SCORE :${String(score).padStart(5, " ")} `;
+        updateMenuChecks();
+      }
+
+      function buildSprites() {
+        for (let value = 0; value < 5; value += 1) {
+          sprites.panel[0][value] = buildPanelSprite(value, false);
+          sprites.panel[1][value] = buildPanelSprite(value, true);
+          sprites.marble[0][value] = buildMarbleSprite(value, false);
+          sprites.marble[1][value] = buildMarbleSprite(value, true);
+        }
+      }
+
+      function makeSpriteCanvas() {
+        const c = document.createElement("canvas");
+        c.width = TILE;
+        c.height = TILE;
+        return c;
+      }
+
+      function glyphMask(letter) {
+        const c = makeSpriteCanvas();
+        const g = c.getContext("2d", { willReadFrequently: true });
+        g.clearRect(0, 0, TILE, TILE);
+        g.fillStyle = "#000";
+        g.font = 'normal 28px "Times New Roman", Times, serif';
+        g.textAlign = "center";
+        g.textBaseline = "alphabetic";
+        g.fillText(letter, 16, 27);
+        const image = g.getImageData(0, 0, TILE, TILE);
+        const mask = new Uint8Array(TILE * TILE);
+        for (let i = 0; i < mask.length; i += 1) mask[i] = image.data[i * 4 + 3] >= 96 ? 1 : 0;
+        return mask;
+      }
+
+      const glyphs = LETTERS.map(glyphMask);
+
+      function drawHardGlyph(g, value, color) {
+        const mask = glyphs[value];
+        g.fillStyle = color;
+        for (let y = 0; y < TILE; y += 1) {
+          for (let x = 0; x < TILE; x += 1) {
+            if (mask[y * TILE + x]) g.fillRect(x, y, 1, 1);
+          }
+        }
+      }
+
+      function buildPanelSprite(value, selected) {
+        const c = makeSpriteCanvas();
+        const g = c.getContext("2d", { alpha: false });
+        g.fillStyle = "#000000";
+        g.fillRect(0, 0, 32, 32);
+        g.fillStyle = "#c0c0c0";
+        g.fillRect(0, 0, 31, 31);
+        g.fillStyle = "#808080";
+        g.fillRect(1, 1, 30, 30);
+        g.fillStyle = "#000000";
+        g.fillRect(2, 2, 28, 28);
+        g.fillStyle = selected ? "#ffffff" : COLORS[value];
+        g.fillRect(3, 3, 26, 26);
+        g.fillStyle = "#c0c0c0";
+        g.fillRect(29, 2, 1, 28);
+        g.fillRect(2, 29, 28, 1);
+        g.fillStyle = "#808080";
+        g.fillRect(30, 1, 1, 30);
+        g.fillRect(1, 30, 30, 1);
+        drawHardGlyph(g, value, selected ? COLORS[value] : "#000000");
+        return c;
+      }
+
+      function buildMarbleSprite(value, selected) {
+        const c = makeSpriteCanvas();
+        const g = c.getContext("2d", { alpha: false });
+        g.fillStyle = selected ? "#ffffff" : BOARD_GREEN;
+        g.fillRect(0, 0, 32, 32);
+        const image = g.getImageData(0, 0, 32, 32);
+        const main = hexRgb(COLORS[value]);
+        const dark = hexRgb(DARK_COLORS[value]);
+        const black = [0, 0, 0];
+        for (let y = 0; y < 32; y += 1) {
+          for (let x = 0; x < 32; x += 1) {
+            const dx = x - 14.5;
+            const dy = y - 14.5;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d <= 14.4) {
+              let rgb = main;
+              if (d > 12.6 && (x + y > 29 || x > 26 || y > 26)) rgb = black;
+              else if (d > 11.7 && x + y > 28) rgb = dark;
+              const i = (y * 32 + x) * 4;
+              image.data[i] = rgb[0];
+              image.data[i + 1] = rgb[1];
+              image.data[i + 2] = rgb[2];
+              image.data[i + 3] = 255;
+            }
+          }
+        }
+        g.putImageData(image, 0, 0);
+        g.fillStyle = "#ffffff";
+        const shine = [[8,16],[9,15],[10,14],[11,13],[12,12],[13,11],[14,10],[15,9],[16,8],
+                       [9,16],[10,15],[11,14],[12,13],[13,12],[14,11],[15,10]];
+        for (const [x, y] of shine) g.fillRect(x, y, 1, 1);
+        return c;
+      }
+
+      function hexRgb(hex) {
+        return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+      }
+
+      function draw() {
+        const { cols, rows } = SIZES[sizeKey];
+        ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = BOARD_GREEN;
+        ctx.fillRect(0, 0, cols * TILE, rows * TILE);
+        const selected = new Set(hoveredGroup.map(([x, y]) => `${x},${y}`));
+        for (let x = 0; x < board.length; x += 1) {
+          for (let y = 0; y < board[x].length; y += 1) {
+            const screenY = rows - 1 - y;
+            const value = board[x][y];
+            const state = selected.has(`${x},${y}`) ? 1 : 0;
+            ctx.drawImage(sprites[character][state][value], x * TILE, screenY * TILE);
+          }
+        }
+      }
+
+      function pointerToCell(event) {
+        const rect = canvas.getBoundingClientRect();
+        const px = (event.clientX - rect.left) * (canvas.width / rect.width);
+        const py = (event.clientY - rect.top) * (canvas.height / rect.height);
+        const x = Math.floor(px / TILE);
+        const screenY = Math.floor(py / TILE);
+        const y = SIZES[sizeKey].rows - 1 - screenY;
+        return [x, y];
+      }
+
+      canvas.addEventListener("mousemove", event => {
+        const [x, y] = pointerToCell(event);
+        const group = findGroup(x, y);
+        const next = group.length >= 2 ? group : [];
+        const oldKey = hoveredGroup.map(p => p.join(",")).sort().join(";");
+        const newKey = next.map(p => p.join(",")).sort().join(";");
+        if (oldKey !== newKey) {
+          hoveredGroup = next;
+          canvas.style.cursor = next.length >= 2 ? "pointer" : "default";
+          updateStatus();
+          draw();
+        }
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        if (hoveredGroup.length) {
+          hoveredGroup = [];
+          canvas.style.cursor = "default";
+          updateStatus();
+          draw();
+        }
+      });
+
+      canvas.addEventListener("click", event => {
+        if (Date.now() - lastTouchEnd < 700) return;
+        const [x, y] = pointerToCell(event);
+        const group = findGroup(x, y);
+        if (group.length >= 2) removeGroup(group);
+      });
+
+      canvas.addEventListener("touchstart", event => {
+        event.preventDefault();
+        const touch = event.changedTouches[0];
+        if (!touch) return;
+        const [x, y] = pointerToCell(touch);
+        hoveredGroup = findGroup(x, y);
+        if (hoveredGroup.length < 2) hoveredGroup = [];
+        updateStatus();
+        draw();
+      }, { passive: false });
+
+      canvas.addEventListener("touchend", event => {
+        event.preventDefault();
+        lastTouchEnd = Date.now();
+        const touch = event.changedTouches[0];
+        if (!touch) return;
+        const [x, y] = pointerToCell(touch);
+        const group = findGroup(x, y);
+        if (group.length >= 2) removeGroup(group);
+      }, { passive: false });
+
+      canvas.addEventListener("touchcancel", () => {
+        hoveredGroup = [];
+        updateStatus();
+        draw();
+      }, { passive: true });
+
+      function fitBoard() {
+        const { cols, rows } = SIZES[sizeKey];
+        const logicalW = cols * TILE;
+        const logicalH = rows * TILE;
+        canvas.width = logicalW;
+        canvas.height = logicalH;
+
+        const fixedChrome = 23 + 25 + 27;
+        const bodyStyle = window.getComputedStyle(document.body);
+        const bodyPaddingX = parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight);
+        const bodyPaddingY = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+        const availableW = Math.max(180, window.innerWidth - bodyPaddingX - 4);
+        const availableH = Math.max(140, window.innerHeight - fixedChrome - bodyPaddingY - 4);
+        const fit = Math.min(availableW / logicalW, availableH / logicalH);
+        let scale = Math.min(1.5, fit);
+        scale = Math.max(0.25, scale);
+
+        const cssW = Math.max(1, logicalW * scale);
+        const cssH = Math.max(1, logicalH * scale);
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${cssH}px`;
+        boardFrame.style.width = `${cssW}px`;
+        boardFrame.style.height = `${cssH}px`;
+        gameWindow.style.width = `${cssW + 4}px`;
+        draw();
+      }
+
+      function playMoveSound() {
+        if (!soundOn) return;
+        try {
+          if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioContext.state === "suspended") audioContext.resume();
+          const now = audioContext.currentTime + 0.003;
+          const notes = [659.255, 880.0];
+          const noteLength = 0.03125;
+          notes.forEach((frequency, index) => {
+            const start = now + index * noteLength;
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = "square";
+            oscillator.frequency.setValueAtTime(frequency, start);
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.linearRampToValueAtTime(0.055, start + 0.002);
+            gain.gain.setValueAtTime(0.055, start + noteLength - 0.004);
+            gain.gain.linearRampToValueAtTime(0.0001, start + noteLength);
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start(start);
+            oscillator.stop(start + noteLength + 0.004);
+          });
+        } catch (_) {}
+      }
+
+      function showTextDialog(title, html) {
+        textDialogTitle.textContent = title;
+        textDialogBody.innerHTML = html;
+        showDialog(textDialog);
+      }
+
+      function showDialog(dialog) {
+        closeMenus();
+        if (typeof dialog.showModal === "function") dialog.showModal();
+        else dialog.setAttribute("open", "");
+      }
+
+      function closeDialog(dialog) {
+        if (typeof dialog.close === "function") dialog.close();
+        else dialog.removeAttribute("open");
+      }
+
+      function showInformation() {
+        const c = countsByColor();
+        showTextDialog("INFORMATION", `<div class="color-counts">(A) Blue ..... ${String(c[0]).padStart(3, " ")}\n(B) Red ....... ${String(c[1]).padStart(3, " ")}\n(C) Purple .... ${String(c[2]).padStart(3, " ")}\n(D) Yellow .... ${String(c[3]).padStart(3, " ")}\n(E) Cyan ...... ${String(c[4]).padStart(3, " ")}</div>`);
+      }
+
+      function showScores() {
+        const scores = loadScores();
+        const rows = Array.from({ length: 10 }, (_, i) => {
+          const item = scores[i];
+          return `<tr><td>${i + 1}.</td><td>${item ? String(item.score).padStart(5, " ") : "-----"}</td><td>${item ? item.size : ""}</td></tr>`;
+        }).join("");
+        showTextDialog("SCORE BEST 10", `<table class="score-table" aria-label="Best ten scores"><tbody>${rows}</tbody></table>`);
+      }
+
+      function showHelp() {
+        showTextDialog("SAME GAME HELP", `
+          <p>Remove two or more adjacent blocks of the same color. Blocks above fall down, and empty columns move left.</p>
+          <p><strong>POINT = (MARK - 2) × (MARK - 2)</strong></p>
+          <ul>
+            <li>Move the pointer over a removable group to see MARK and POINT.</li>
+            <li>Click the group to remove it.</li>
+            <li>Clearing the entire board earns a 1000-point bonus.</li>
+          </ul>
+          <p>Menu includes New Game, Replay, Undo, Score, Information, and Sound. Option includes the original Normal/Large sizes and Panel/Marble characters.</p>`);
+      }
+
+      function showAbout() {
+        showTextDialog("ABOUT SAMEGAME", `
+          <div class="about-mark" aria-hidden="true"><span style="color:#0000ff">A</span><span style="color:#ff0000">B</span><span style="color:#ff00ff">C</span><span style="color:#ffff00">D</span></div>
+          <p style="text-align:center"><strong>Same Game for Windows Version 1.11E</strong><br>Modern Mac/browser clean-room recreation</p>
+          <p style="text-align:center">Faithful board geometry, palette, panel and marble modes, classic menu layout, status formatting, and original-style two-note sound behavior.</p>
+          <p style="text-align:center;font-size:12px">No original program code or bitmap resources are embedded.</p>`);
+      }
+
+      function updateMenuChecks() {
+        document.querySelectorAll(".radio-item").forEach(item => {
+          const setting = item.dataset.setting;
+          const value = item.dataset.value;
+          let checked = false;
+          if (setting === "size") checked = value === sizeKey;
+          if (setting === "character") checked = value === character;
+          if (setting === "sound") checked = (value === "on") === soundOn;
+          item.querySelector(".check").textContent = checked ? "✓" : "";
+        });
+      }
+
+      function closeMenus() {
+        document.querySelectorAll(".menu.open").forEach(menu => menu.classList.remove("open"));
+        document.querySelectorAll(".menu-button").forEach(button => button.setAttribute("aria-expanded", "false"));
+        document.querySelectorAll(".submenu-wrap.touch-open").forEach(wrap => wrap.classList.remove("touch-open"));
+        document.querySelectorAll(".submenu-label").forEach(button => button.setAttribute("aria-expanded", "false"));
+      }
+
+      document.querySelectorAll(".menu-button").forEach(button => {
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          const menu = button.nextElementSibling;
+          const willOpen = !menu.classList.contains("open");
+          closeMenus();
+          if (willOpen) {
+            menu.classList.add("open");
+            button.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      document.querySelectorAll(".submenu-label").forEach(button => {
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          const wrap = button.closest(".submenu-wrap");
+          const willOpen = !wrap.classList.contains("touch-open");
+          document.querySelectorAll(".submenu-wrap.touch-open").forEach(openWrap => {
+            openWrap.classList.remove("touch-open");
+            openWrap.querySelector(".submenu-label").setAttribute("aria-expanded", "false");
+          });
+          if (willOpen) {
+            wrap.classList.add("touch-open");
+            button.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      document.addEventListener("click", event => {
+        if (!event.target.closest(".menu-wrap")) closeMenus();
+      });
+
+      document.querySelectorAll("[data-action]").forEach(item => {
+        item.addEventListener("click", () => {
+          const action = item.dataset.action;
+          closeMenus();
+          if (action === "new") newGame();
+          if (action === "replay") replayGame();
+          if (action === "undo") undo();
+          if (action === "scores") showScores();
+          if (action === "information") showInformation();
+          if (action === "help") showHelp();
+          if (action === "about") showAbout();
+          if (action === "exit") {
+            window.close();
+            window.setTimeout(() => showTextDialog("EXIT", "<p>This browser tab can now be closed.</p>"), 100);
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-setting]").forEach(item => {
+        item.addEventListener("click", () => {
+          const setting = item.dataset.setting;
+          const value = item.dataset.value;
+          if (setting === "size" && value !== sizeKey) {
+            sizeKey = value;
+            saveSettings();
+            fitBoard();
+            newGame();
+          } else if (setting === "character") {
+            character = value;
+            saveSettings();
+            draw();
+          } else if (setting === "sound") {
+            soundOn = value === "on";
+            saveSettings();
+          }
+          updateMenuChecks();
+          closeMenus();
+        });
+      });
+
+      document.querySelectorAll("[data-close-dialog]").forEach(button => {
+        button.addEventListener("click", () => closeDialog(button.closest("dialog")));
+      });
+
+      document.getElementById("gameOverNew").addEventListener("click", () => {
+        closeDialog(gameOverDialog);
+        newGame();
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeMenus();
+          document.querySelectorAll("dialog[open]").forEach(closeDialog);
+          return;
+        }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+          event.preventDefault();
+          undo();
+        }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "r") {
+          event.preventDefault();
+          replayGame();
+        }
+      });
+
+      window.addEventListener("resize", fitBoard);
+      if (window.visualViewport) window.visualViewport.addEventListener("resize", fitBoard);
+      buildSprites();
+      fitBoard();
+      newGame();
+
+      if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
