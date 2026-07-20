@@ -490,6 +490,7 @@
       let clearBonusAwarded = false;
       let audioContext = null;
       let lastTouchEnd = 0;
+      let touchSelectionKey = "";
       const sprites = { panel: [[], []], marble: [[], []] };
 
       function loadSettings() {
@@ -519,6 +520,10 @@
         return mark >= 2 ? (mark - 2) * (mark - 2) : 0;
       }
 
+      function groupKey(group) {
+        return group.map(point => point.join(",")).sort().join(";");
+      }
+
       function makeRandomBoard() {
         const { cols, rows } = SIZES[sizeKey];
         const result = [];
@@ -536,6 +541,7 @@
         history = [];
         score = 0;
         hoveredGroup = [];
+        touchSelectionKey = "";
         gameOverRecorded = false;
         clearBonusAwarded = false;
         updateStatus();
@@ -547,6 +553,7 @@
         history = [];
         score = 0;
         hoveredGroup = [];
+        touchSelectionKey = "";
         gameOverRecorded = false;
         clearBonusAwarded = false;
         updateStatus();
@@ -560,6 +567,7 @@
         score = previous.score;
         clearBonusAwarded = previous.clearBonusAwarded;
         hoveredGroup = [];
+        touchSelectionKey = "";
         gameOverRecorded = false;
         updateStatus();
         draw();
@@ -608,6 +616,7 @@
           clearBonusAwarded = true;
         }
         hoveredGroup = [];
+        touchSelectionKey = "";
         playMoveSound();
         updateStatus();
         draw();
@@ -796,11 +805,12 @@
       }
 
       canvas.addEventListener("mousemove", event => {
+        touchSelectionKey = "";
         const [x, y] = pointerToCell(event);
         const group = findGroup(x, y);
         const next = group.length >= 2 ? group : [];
-        const oldKey = hoveredGroup.map(p => p.join(",")).sort().join(";");
-        const newKey = next.map(p => p.join(",")).sort().join(";");
+        const oldKey = groupKey(hoveredGroup);
+        const newKey = groupKey(next);
         if (oldKey !== newKey) {
           hoveredGroup = next;
           canvas.style.cursor = next.length >= 2 ? "pointer" : "default";
@@ -810,6 +820,7 @@
       });
 
       canvas.addEventListener("mouseleave", () => {
+        if (touchSelectionKey) return;
         if (hoveredGroup.length) {
           hoveredGroup = [];
           canvas.style.cursor = "default";
@@ -827,13 +838,6 @@
 
       canvas.addEventListener("touchstart", event => {
         event.preventDefault();
-        const touch = event.changedTouches[0];
-        if (!touch) return;
-        const [x, y] = pointerToCell(touch);
-        hoveredGroup = findGroup(x, y);
-        if (hoveredGroup.length < 2) hoveredGroup = [];
-        updateStatus();
-        draw();
       }, { passive: false });
 
       canvas.addEventListener("touchend", event => {
@@ -843,14 +847,33 @@
         if (!touch) return;
         const [x, y] = pointerToCell(touch);
         const group = findGroup(x, y);
-        if (group.length >= 2) removeGroup(group);
-      }, { passive: false });
+        const next = group.length >= 2 ? group : [];
+        const nextKey = groupKey(next);
 
-      canvas.addEventListener("touchcancel", () => {
-        hoveredGroup = [];
+        if (!nextKey) {
+          touchSelectionKey = "";
+          hoveredGroup = [];
+          updateStatus();
+          draw();
+          return;
+        }
+
+        if (nextKey === touchSelectionKey) {
+          touchSelectionKey = "";
+          removeGroup(next);
+          return;
+        }
+
+        touchSelectionKey = nextKey;
+        hoveredGroup = next;
         updateStatus();
         draw();
-      }, { passive: true });
+      }, { passive: false });
+
+      canvas.addEventListener("touchcancel", event => {
+        event.preventDefault();
+        lastTouchEnd = Date.now();
+      }, { passive: false });
 
       function fitBoard() {
         const { cols, rows } = SIZES[sizeKey];
@@ -941,8 +964,8 @@
           <p>Remove two or more adjacent blocks of the same color. Blocks above fall down, and empty columns move left.</p>
           <p><strong>POINT = (MARK - 2) × (MARK - 2)</strong></p>
           <ul>
-            <li>Move the pointer over a removable group to see MARK and POINT.</li>
-            <li>Click the group to remove it.</li>
+            <li>On a touch screen, tap a removable group once to highlight it and see MARK and POINT. Tap the highlighted group again to remove it.</li>
+            <li>With a mouse, move the pointer over a group to preview it, then click once to remove it.</li>
             <li>Clearing the entire board earns a 1000-point bonus.</li>
           </ul>
           <p>Menu includes New Game, Replay, Undo, Score, Information, and Sound. Option includes the original Normal/Large sizes and Panel/Marble characters.</p>`);
