@@ -358,6 +358,38 @@
       .status-panel { font-size: 11px; }
       .shortcut { display: none; }
     }
+
+    @media (hover: none) and (pointer: coarse) {
+      .menubar {
+        height: 34px;
+        padding: 0 4px;
+      }
+
+      .menu-button {
+        height: 32px;
+        padding: 5px 10px;
+        font-size: 15px;
+        line-height: 22px;
+      }
+
+      .menu {
+        top: 32px;
+        min-width: 218px;
+      }
+
+      .menu-item,
+      .submenu-label {
+        min-height: 36px;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        padding: 6px 8px;
+        font-size: 14px;
+        line-height: 22px;
+      }
+
+      .submenu { min-width: 190px; }
+      .check { width: 18px; }
+      .menu-separator { margin: 4px 2px; }
+    }
   </style>
 </head>
 <body>
@@ -491,6 +523,10 @@
       let audioContext = null;
       let lastTouchEnd = 0;
       let touchSelectionKey = "";
+      let moveAnimationId = 0;
+      let moveAnimating = false;
+      let animationMark = null;
+      let removingTiles = new Set();
       const sprites = { panel: [[], []], marble: [[], []] };
 
       function loadSettings() {
@@ -517,7 +553,18 @@
       }
 
       function pointFor(mark) {
-        return mark >= 2 ? (mark - 2) * (mark - 2) : 0;
+        return mark >= 2 ? mark * (mark - 1) : 0;
+      }
+
+      function wait(milliseconds) {
+        return new Promise(resolve => window.setTimeout(resolve, milliseconds));
+      }
+
+      function cancelMoveAnimation() {
+        moveAnimationId += 1;
+        moveAnimating = false;
+        animationMark = null;
+        removingTiles = new Set();
       }
 
       function groupKey(group) {
@@ -536,6 +583,7 @@
       }
 
       function newGame() {
+        cancelMoveAnimation();
         board = makeRandomBoard();
         initialBoard = cloneBoard(board);
         history = [];
@@ -549,6 +597,7 @@
       }
 
       function replayGame() {
+        cancelMoveAnimation();
         board = cloneBoard(initialBoard);
         history = [];
         score = 0;
@@ -561,6 +610,7 @@
       }
 
       function undo() {
+        cancelMoveAnimation();
         const previous = history.pop();
         if (!previous) return;
         board = cloneBoard(previous.board);
@@ -586,7 +636,7 @@
         while (queue.length) {
           const [x, y] = queue.shift();
           found.push([x, y]);
-          const neighbors = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]];
+          const neighbors = [[x, y + 1], [x + 1, y], [x, y - 1], [x - 1, y]];
           for (const [nx, ny] of neighbors) {
             const key = `${nx},${ny}`;
             if (!seen.has(key) && cellExists(nx, ny) && board[nx][ny] === value) {
@@ -598,9 +648,33 @@
         return found;
       }
 
-      function removeGroup(group) {
-        if (group.length < 2) return;
+      async function removeGroup(group) {
+        if (group.length < 2 || moveAnimating) return;
         history.push({ board: cloneBoard(board), score, clearBonusAwarded });
+        const animationId = ++moveAnimationId;
+        const pointsPerTile = group.length - 1;
+        moveAnimating = true;
+        animationMark = group.length;
+        removingTiles = new Set();
+        hoveredGroup = group.slice();
+        touchSelectionKey = "";
+
+        for (let index = 0; index < group.length; index += 1) {
+          const [x, y] = group[index];
+          removingTiles.add(`${x},${y}`);
+          playTileSound();
+          draw();
+          await wait(80);
+          if (animationId !== moveAnimationId) return;
+
+          score += pointsPerTile;
+          animationMark = group.length - index - 1;
+          updateStatus();
+        }
+
+        await wait(40);
+        if (animationId !== moveAnimationId) return;
+
         const byColumn = new Map();
         for (const [x, y] of group) {
           if (!byColumn.has(x)) byColumn.set(x, new Set());
@@ -610,17 +684,23 @@
           board[x] = board[x].filter((_, y) => !rows.has(y));
         }
         board = board.filter(column => column.length > 0);
-        score += pointFor(group.length);
         if (board.length === 0 && !clearBonusAwarded) {
           score += 1000;
           clearBonusAwarded = true;
         }
+        moveAnimating = false;
+        animationMark = null;
+        removingTiles = new Set();
         hoveredGroup = [];
         touchSelectionKey = "";
-        playMoveSound();
         updateStatus();
         draw();
-        if (!hasAnyMove()) window.setTimeout(finishGame, 80);
+        if (!hasAnyMove()) {
+          const finishAnimationId = moveAnimationId;
+          window.setTimeout(() => {
+            if (finishAnimationId === moveAnimationId) finishGame();
+          }, 80);
+        }
       }
 
       function hasAnyMove() {
@@ -668,7 +748,9 @@
       }
 
       function updateStatus() {
-        const mark = hoveredGroup.length >= 2 ? hoveredGroup.length : 0;
+        const mark = animationMark === null
+          ? (hoveredGroup.length >= 2 ? hoveredGroup.length : 0)
+          : animationMark;
         markPanel.textContent = `MARK :${String(mark).padStart(2, " ")}  (POINT :${String(pointFor(mark)).padStart(4, " ")})`;
         scorePanel.textContent = `SCORE :${String(score).padStart(5, " ")} `;
         updateMenuChecks();
@@ -786,6 +868,7 @@
         const selected = new Set(hoveredGroup.map(([x, y]) => `${x},${y}`));
         for (let x = 0; x < board.length; x += 1) {
           for (let y = 0; y < board[x].length; y += 1) {
+            if (removingTiles.has(`${x},${y}`)) continue;
             const screenY = rows - 1 - y;
             const value = board[x][y];
             const state = selected.has(`${x},${y}`) ? 1 : 0;
@@ -805,6 +888,7 @@
       }
 
       canvas.addEventListener("mousemove", event => {
+        if (moveAnimating) return;
         touchSelectionKey = "";
         const [x, y] = pointerToCell(event);
         const group = findGroup(x, y);
@@ -820,6 +904,7 @@
       });
 
       canvas.addEventListener("mouseleave", () => {
+        if (moveAnimating) return;
         if (touchSelectionKey) return;
         if (hoveredGroup.length) {
           hoveredGroup = [];
@@ -830,6 +915,7 @@
       });
 
       canvas.addEventListener("click", event => {
+        if (moveAnimating) return;
         if (Date.now() - lastTouchEnd < 700) return;
         const [x, y] = pointerToCell(event);
         const group = findGroup(x, y);
@@ -843,6 +929,7 @@
       canvas.addEventListener("touchend", event => {
         event.preventDefault();
         lastTouchEnd = Date.now();
+        if (moveAnimating) return;
         const touch = event.changedTouches[0];
         if (!touch) return;
         const [x, y] = pointerToCell(touch);
@@ -882,7 +969,9 @@
         canvas.width = logicalW;
         canvas.height = logicalH;
 
-        const fixedChrome = 23 + 25 + 27;
+        const fixedChrome = [".titlebar", ".menubar", ".statusbar"]
+          .map(selector => document.querySelector(selector).getBoundingClientRect().height)
+          .reduce((total, height) => total + height, 0);
         const bodyStyle = window.getComputedStyle(document.body);
         const bodyPaddingX = parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight);
         const bodyPaddingY = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
@@ -902,7 +991,7 @@
         draw();
       }
 
-      function playMoveSound() {
+      function playTileSound() {
         if (!soundOn) return;
         try {
           if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -962,10 +1051,11 @@
       function showHelp() {
         showTextDialog("SAME GAME HELP", `
           <p>Remove two or more adjacent blocks of the same color. Blocks above fall down, and empty columns move left.</p>
-          <p><strong>POINT = (MARK - 2) × (MARK - 2)</strong></p>
+          <p><strong>POINT = MARK × (MARK - 1)</strong></p>
           <ul>
             <li>On a touch screen, tap a removable group once to highlight it and see MARK and POINT. Tap the highlighted group again to remove it.</li>
             <li>With a mouse, move the pointer over a group to preview it, then click once to remove it.</li>
+            <li>Tiles disappear one at a time with a buzzer pulse before the board settles.</li>
             <li>Clearing the entire board earns a 1000-point bonus.</li>
           </ul>
           <p>Menu includes New Game, Replay, Undo, Score, Information, and Sound. Option includes the original Normal/Large sizes and Panel/Marble characters.</p>`);
@@ -975,7 +1065,7 @@
         showTextDialog("ABOUT SAMEGAME", `
           <div class="about-mark" aria-hidden="true"><span style="color:#0000ff">A</span><span style="color:#ff0000">B</span><span style="color:#ff00ff">C</span><span style="color:#ffff00">D</span></div>
           <p style="text-align:center"><strong>Same Game for Windows Version 1.11E</strong><br>Modern Mac/browser clean-room recreation</p>
-          <p style="text-align:center">Faithful board geometry, palette, panel and marble modes, classic menu layout, status formatting, and original-style two-note sound behavior.</p>
+          <p style="text-align:center">Faithful board geometry, palette, panel and marble modes, classic menu layout, status formatting, and tile-by-tile buzzer sequence.</p>
           <p style="text-align:center;font-size:12px">No original program code or bitmap resources are embedded.</p>`);
       }
 
