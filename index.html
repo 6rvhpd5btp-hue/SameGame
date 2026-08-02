@@ -350,9 +350,16 @@
 
     .color-count-row {
       display: grid;
-      grid-template-columns: 3ch 7ch minmax(18px, 1fr) 3ch 13px;
+      grid-template-columns: 3ch 7ch minmax(18px, 1fr) 3ch auto;
       align-items: center;
       column-gap: 7px;
+    }
+
+    .color-count-letter { text-align: center; }
+
+    .color-count-game-letter {
+      font: normal 19px/1 "Times New Roman", Times, serif;
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
     }
 
     .color-count-name { text-align: left; }
@@ -364,13 +371,21 @@
 
     .color-count-value { text-align: right; }
 
-    .count-indicator {
+    .count-scale {
+      display: grid;
+      grid-template-columns: repeat(5, 11px);
+      gap: 4px;
+      margin-left: 2px;
+    }
+
+    .count-scale-box {
       width: 11px;
       height: 11px;
-      display: inline-block;
-      border: 1px solid #000;
-      border-radius: 50%;
-      box-shadow: inset 1px 1px 0 rgba(255,255,255,.65);
+      display: block;
+      border-top: 1px solid rgba(255,255,255,.75);
+      border-left: 1px solid rgba(255,255,255,.75);
+      border-right: 1px solid #555;
+      border-bottom: 1px solid #555;
     }
 
     .score-transfer-code {
@@ -1315,19 +1330,14 @@
       function showInformation() {
         const c = countsByColor();
         const names = ["Blue", "Red", "Purple", "Yellow", "Cyan"];
+        const scaleColors = ["#ef233c", "#f27100", "#ffd51f", "#8fd129", "#32bd58"];
         const lowest = Math.min(...c);
         const highest = Math.max(...c);
         const rows = c.map((count, index) => {
           const amount = highest === lowest ? 0.5 : (count - lowest) / (highest - lowest);
-          const hue = Math.round(amount * 120);
-          const level = highest === lowest
-            ? "equal count"
-            : count === highest
-              ? "highest count"
-              : count === lowest
-                ? "lowest count"
-                : "middle count";
-          return `<div class="color-count-row" role="listitem"><span>(${LETTERS[index]})</span><span class="color-count-name">${names[index]}</span><span class="color-count-leader" aria-hidden="true"></span><span class="color-count-value">${count}</span><span class="count-indicator" style="background:hsl(${hue}, 85%, 42%)" title="${level}" aria-label="${level}"></span></div>`;
+          const level = highest === 0 ? 0 : highest === lowest ? 3 : 1 + Math.round(amount * 4);
+          const boxes = scaleColors.map((color, scaleIndex) => `<span class="count-scale-box" style="background:${scaleIndex < level ? color : "#858585"}" aria-hidden="true"></span>`).join("");
+          return `<div class="color-count-row" role="listitem"><span class="color-count-letter">(<span class="color-count-game-letter" style="color:${COLORS[index]}">${LETTERS[index]}</span>)</span><span class="color-count-name">${names[index]}</span><span class="color-count-leader" aria-hidden="true"></span><span class="color-count-value">${count}</span><span class="count-scale" role="img" title="${level} out of 5 relative priority" aria-label="${level} out of 5 relative priority">${boxes}</span></div>`;
         }).join("");
         showTextDialog("INFORMATION", `<div class="color-counts" role="list" aria-label="Tiles remaining by color">${rows}</div>`);
       }
