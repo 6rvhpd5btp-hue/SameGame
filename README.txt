@@ -31,6 +31,15 @@ visit has completed, the game, menus, icons, sound code, and saved local scores
 remain available offline. iPadOS may wait for the first tap before allowing
 sound; this is normal.
 
+AUTOMATIC SAVE AND RESUME
+-------------------------
+The current board, score, original replay board, undo history, and completed
+game status are saved automatically on the device after every completed move.
+Closing, reloading, or having iPadOS unload the web app will resume the most
+recent completed state the next time it opens. Starting a New Game deliberately
+replaces the saved state. Safari website data remains device-local; manually
+clearing that website data will also clear the saved game and high scores.
+
 IPAD CONTROLS
 -------------
 Tap a removable tile group once to highlight it and display its MARK and POINT
@@ -42,3 +51,10 @@ original menus. Their touch targets become slightly larger on touch screens
 while retaining the classic Windows appearance. The Size and Character
 submenus are also tap-enabled. Normal and Large boards retain their original
 aspect ratios and scale uniformly so the entire board remains visible.
+
+UPDATING AN EXISTING HOME SCREEN ICON
+-------------------------------------
+iPadOS may retain the previous icon artwork after the website is updated. If
+that happens, remove only the Same Game Home Screen icon and add the website to
+the Home Screen again. The redesigned icon keeps the classic Windows window on
+a wider teal desktop margin so the rounded iOS crop does not cut into it.

@@ -496,6 +496,7 @@
       const BOARD_GREEN = "#00bf00";
       const STORAGE_KEY = "sameGame111ERecreationSettings";
       const SCORES_KEY = "sameGame111ERecreationScores";
+      const GAME_STATE_KEY = "sameGame111ERecreationGameStateV1";
 
       const canvas = document.getElementById("board");
       const ctx = canvas.getContext("2d", { alpha: false });
@@ -552,6 +553,78 @@
         return source.map(column => column.slice());
       }
 
+      function isValidBoard(candidate, size, requireFullBoard = false) {
+        const { cols, rows } = SIZES[size];
+        if (!Array.isArray(candidate) || candidate.length > cols) return false;
+        if (requireFullBoard && candidate.length !== cols) return false;
+        return candidate.every(column => {
+          if (!Array.isArray(column) || column.length < 1 || column.length > rows) return false;
+          if (requireFullBoard && column.length !== rows) return false;
+          return column.every(value => Number.isInteger(value) && value >= 0 && value < LETTERS.length);
+        });
+      }
+
+      function isValidHistory(candidate, size) {
+        const { cols, rows } = SIZES[size];
+        if (!Array.isArray(candidate) || candidate.length > cols * rows) return false;
+        return candidate.every(entry => entry
+          && isValidBoard(entry.board, size)
+          && Number.isInteger(entry.score)
+          && entry.score >= 0
+          && typeof entry.clearBonusAwarded === "boolean");
+      }
+
+      function saveGameState() {
+        if (moveAnimating || !isValidBoard(board, sizeKey) || !isValidBoard(initialBoard, sizeKey, true)) return;
+        const state = {
+          version: 1,
+          size: sizeKey,
+          board,
+          initialBoard,
+          history,
+          score,
+          clearBonusAwarded,
+          gameOverRecorded,
+          savedAt: Date.now()
+        };
+        try { localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state)); } catch (_) {}
+      }
+
+      function restoreGameState() {
+        try {
+          const state = JSON.parse(localStorage.getItem(GAME_STATE_KEY) || "null");
+          const savedSize = state && state.size === "large" ? "large" : "normal";
+          if (!state
+              || state.version !== 1
+              || !isValidBoard(state.board, savedSize)
+              || !isValidBoard(state.initialBoard, savedSize, true)
+              || !isValidHistory(state.history, savedSize)
+              || !Number.isInteger(state.score)
+              || state.score < 0
+              || typeof state.clearBonusAwarded !== "boolean"
+              || typeof state.gameOverRecorded !== "boolean") return false;
+
+          sizeKey = savedSize;
+          settings.size = sizeKey;
+          board = cloneBoard(state.board);
+          initialBoard = cloneBoard(state.initialBoard);
+          history = state.history.map(entry => ({
+            board: cloneBoard(entry.board),
+            score: entry.score,
+            clearBonusAwarded: entry.clearBonusAwarded
+          }));
+          score = state.score;
+          clearBonusAwarded = state.clearBonusAwarded;
+          gameOverRecorded = state.gameOverRecorded;
+          hoveredGroup = [];
+          touchSelectionKey = "";
+          saveSettings();
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
       function pointFor(mark) {
         return mark >= 2 ? mark * (mark - 1) : 0;
       }
@@ -594,6 +667,7 @@
         clearBonusAwarded = false;
         updateStatus();
         draw();
+        saveGameState();
       }
 
       function replayGame() {
@@ -607,6 +681,7 @@
         clearBonusAwarded = false;
         updateStatus();
         draw();
+        saveGameState();
       }
 
       function undo() {
@@ -621,6 +696,7 @@
         gameOverRecorded = false;
         updateStatus();
         draw();
+        saveGameState();
       }
 
       function cellExists(x, y) {
@@ -695,6 +771,7 @@
         touchSelectionKey = "";
         updateStatus();
         draw();
+        saveGameState();
         if (!hasAnyMove()) {
           const finishAnimationId = moveAnimationId;
           window.setTimeout(() => {
@@ -735,6 +812,7 @@
 
       function finishGame() {
         const madeBestTen = recordScore();
+        saveGameState();
         const clearText = board.length === 0 ? "<p><strong>BOARD CLEARED — 1000 POINT BONUS</strong></p>" : "";
         const bestText = madeBestTen ? "<p><strong>Your Score is in BEST 10 !!</strong></p>" : "";
         gameOverBody.innerHTML = `${clearText}<p style="text-align:center;font-size:18px"><strong>SCORE : ${String(score).padStart(5, " ")}</strong></p>${bestText}`;
@@ -1056,6 +1134,7 @@
             <li>On a touch screen, tap a removable group once to highlight it and see MARK and POINT. Tap the highlighted group again to remove it.</li>
             <li>With a mouse, move the pointer over a group to preview it, then click once to remove it.</li>
             <li>Tiles disappear one at a time with a buzzer pulse before the board settles.</li>
+            <li>Your current board, score, replay board, and undo history are saved automatically on this device.</li>
             <li>Clearing the entire board earns a 1000-point bonus.</li>
           </ul>
           <p>Menu includes New Game, Replay, Undo, Score, Information, and Sound. Option includes the original Normal/Large sizes and Panel/Marble characters.</p>`);
@@ -1188,9 +1267,20 @@
 
       window.addEventListener("resize", fitBoard);
       if (window.visualViewport) window.visualViewport.addEventListener("resize", fitBoard);
+      window.addEventListener("pagehide", saveGameState);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") saveGameState();
+      });
       buildSprites();
-      fitBoard();
-      newGame();
+      if (restoreGameState()) {
+        fitBoard();
+        updateStatus();
+        draw();
+        if (!hasAnyMove()) window.setTimeout(finishGame, 80);
+      } else {
+        fitBoard();
+        newGame();
+      }
 
       if ("serviceWorker" in navigator && location.protocol !== "file:") {
         window.addEventListener("load", () => {
