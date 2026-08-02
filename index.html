@@ -158,8 +158,8 @@
       background: transparent;
       color: #000;
       text-align: left;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 400;
       line-height: 18px;
       white-space: nowrap;
     }
@@ -175,7 +175,15 @@
 
     .check { width: 14px; text-align: center; font-weight: 700; }
     .shortcut { margin-left: 18px; }
-    .arrow { margin-left: 12px; font-size: 10px; }
+    .arrow {
+      width: 0;
+      height: 0;
+      margin-left: 12px;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 6px solid currentColor;
+      font-size: 0;
+    }
 
     .menu-separator {
       height: 2px;
@@ -285,7 +293,7 @@
     .dialog-body {
       padding: 16px 18px 12px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 400;
       line-height: 1.5;
       user-select: text;
     }
@@ -333,11 +341,36 @@
     .score-table td:last-child { text-align: left; }
 
     .color-counts {
-      width: 240px;
+      width: 310px;
       max-width: 100%;
       margin: 4px auto 0;
-      font: 700 14px/1.65 "Courier New", monospace;
-      white-space: pre;
+      font: 700 15px/1.65 "Courier New", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .color-count-row {
+      display: grid;
+      grid-template-columns: 3ch 7ch minmax(18px, 1fr) 3ch 13px;
+      align-items: center;
+      column-gap: 7px;
+    }
+
+    .color-count-name { text-align: left; }
+
+    .color-count-leader {
+      height: 0;
+      border-bottom: 2px dotted currentColor;
+    }
+
+    .color-count-value { text-align: right; }
+
+    .count-indicator {
+      width: 11px;
+      height: 11px;
+      display: inline-block;
+      border: 1px solid #000;
+      border-radius: 50%;
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,.65);
     }
 
     .score-transfer-code {
@@ -407,7 +440,7 @@
         min-height: 36px;
         grid-template-columns: 22px minmax(0, 1fr) auto;
         padding: 6px 8px;
-        font-size: 14px;
+        font-size: 15px;
         line-height: 22px;
       }
 
@@ -415,7 +448,7 @@
       .check { width: 18px; }
       .menu-separator { margin: 4px 2px; }
       .dialog-body { font-size: 15px; }
-      .color-counts { font-size: 15px; }
+      .color-counts { font-size: 16px; }
       .win-button { min-height: 36px; font-size: 14px; }
     }
   </style>
@@ -455,14 +488,14 @@
         <button class="menu-button" type="button" aria-expanded="false"><u>O</u>ption</button>
         <div class="menu" role="menu">
           <div class="submenu-wrap">
-            <button class="submenu-label" type="button" aria-expanded="false"><span class="check"></span><span><u>S</u>ize</span><span class="arrow">▶</span></button>
+            <button class="submenu-label" type="button" aria-expanded="false"><span class="check"></span><span><u>S</u>ize</span><span class="arrow" aria-hidden="true"></span></button>
             <div class="submenu" role="menu">
               <button class="menu-item radio-item" type="button" data-setting="size" data-value="normal"><span class="check"></span><span><u>N</u>ormal Size</span><span></span></button>
               <button class="menu-item radio-item" type="button" data-setting="size" data-value="large"><span class="check"></span><span><u>L</u>arge Size</span><span></span></button>
             </div>
           </div>
           <div class="submenu-wrap">
-            <button class="submenu-label" type="button" aria-expanded="false"><span class="check"></span><span><u>C</u>haracter</span><span class="arrow">▶</span></button>
+            <button class="submenu-label" type="button" aria-expanded="false"><span class="check"></span><span><u>C</u>haracter</span><span class="arrow" aria-hidden="true"></span></button>
             <div class="submenu" role="menu">
               <button class="menu-item radio-item" type="button" data-setting="character" data-value="panel"><span class="check"></span><span><u>P</u>anel</span><span></span></button>
               <button class="menu-item radio-item" type="button" data-setting="character" data-value="marble"><span class="check"></span><span><u>M</u>arble</span><span></span></button>
@@ -1281,7 +1314,22 @@
 
       function showInformation() {
         const c = countsByColor();
-        showTextDialog("INFORMATION", `<div class="color-counts">(A) Blue ..... ${String(c[0]).padStart(3, " ")}\n(B) Red ....... ${String(c[1]).padStart(3, " ")}\n(C) Purple .... ${String(c[2]).padStart(3, " ")}\n(D) Yellow .... ${String(c[3]).padStart(3, " ")}\n(E) Cyan ...... ${String(c[4]).padStart(3, " ")}</div>`);
+        const names = ["Blue", "Red", "Purple", "Yellow", "Cyan"];
+        const lowest = Math.min(...c);
+        const highest = Math.max(...c);
+        const rows = c.map((count, index) => {
+          const amount = highest === lowest ? 0.5 : (count - lowest) / (highest - lowest);
+          const hue = Math.round(amount * 120);
+          const level = highest === lowest
+            ? "equal count"
+            : count === highest
+              ? "highest count"
+              : count === lowest
+                ? "lowest count"
+                : "middle count";
+          return `<div class="color-count-row" role="listitem"><span>(${LETTERS[index]})</span><span class="color-count-name">${names[index]}</span><span class="color-count-leader" aria-hidden="true"></span><span class="color-count-value">${count}</span><span class="count-indicator" style="background:hsl(${hue}, 85%, 42%)" title="${level}" aria-label="${level}"></span></div>`;
+        }).join("");
+        showTextDialog("INFORMATION", `<div class="color-counts" role="list" aria-label="Tiles remaining by color">${rows}</div>`);
       }
 
       function showScores() {
