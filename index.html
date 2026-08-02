@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-title" content="Same Game">
   <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=7">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=7">
   <title>Same Game for Windows</title>
   <style>
     :root {
@@ -159,6 +159,7 @@
       color: #000;
       text-align: left;
       font-size: 13px;
+      font-weight: 600;
       line-height: 18px;
       white-space: nowrap;
     }
@@ -283,8 +284,9 @@
 
     .dialog-body {
       padding: 16px 18px 12px;
-      font-size: 13px;
-      line-height: 1.45;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.5;
       user-select: text;
     }
 
@@ -322,7 +324,7 @@
     .score-table {
       width: 100%;
       border-collapse: collapse;
-      font: 13px/1.5 "Courier New", monospace;
+      font: 700 14px/1.6 "Courier New", monospace;
     }
 
     .score-table td { padding: 1px 6px; }
@@ -334,8 +336,31 @@
       width: 240px;
       max-width: 100%;
       margin: 4px auto 0;
-      font: 13px/1.55 "Courier New", monospace;
+      font: 700 14px/1.65 "Courier New", monospace;
       white-space: pre;
+    }
+
+    .score-transfer-code {
+      width: 100%;
+      min-height: 122px;
+      padding: 8px;
+      resize: vertical;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      font: 600 13px/1.35 "Courier New", monospace;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .score-transfer-status {
+      min-height: 21px;
+      margin: 7px 0 0;
+      font-weight: 700;
     }
 
     .about-mark {
@@ -389,6 +414,9 @@
       .submenu { min-width: 190px; }
       .check { width: 18px; }
       .menu-separator { margin: 4px 2px; }
+      .dialog-body { font-size: 15px; }
+      .color-counts { font-size: 15px; }
+      .win-button { min-height: 36px; font-size: 14px; }
     }
   </style>
 </head>
@@ -413,6 +441,8 @@
           <button class="menu-item" type="button" data-action="undo"><span class="check"></span><span><u>U</u>ndo</span><span></span></button>
           <button class="menu-item" type="button" data-action="scores"><span class="check"></span><span>S<u>c</u>ore</span><span></span></button>
           <button class="menu-item" type="button" data-action="information"><span class="check"></span><span><u>I</u>nformation</span><span></span></button>
+          <button class="menu-item" type="button" data-action="export-scores"><span class="check"></span><span><u>E</u>xport Scores...</span><span></span></button>
+          <button class="menu-item" type="button" data-action="import-scores"><span class="check"></span><span>Im<u>p</u>ort Scores...</span><span></span></button>
           <div class="menu-separator"></div>
           <button class="menu-item radio-item" type="button" data-setting="sound" data-value="on"><span class="check"></span><span><u>S</u>ound On</span><span></span></button>
           <button class="menu-item radio-item" type="button" data-setting="sound" data-value="off"><span class="check"></span><span>Sound <u>O</u>ff</span><span></span></button>
@@ -481,6 +511,21 @@
     </div>
   </dialog>
 
+  <dialog id="scoreTransferDialog">
+    <div class="dialog-window">
+      <div class="dialog-title" id="scoreTransferTitle">SCORE BACKUP</div>
+      <div class="dialog-body">
+        <p id="scoreTransferInstructions"></p>
+        <textarea class="score-transfer-code" id="scoreTransferCode" aria-label="Score backup code" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+        <p class="score-transfer-status" id="scoreTransferStatus" aria-live="polite"></p>
+      </div>
+      <div class="dialog-actions">
+        <button class="win-button" type="button" id="scoreTransferPrimary">Copy</button>
+        <button class="win-button" type="button" data-close-dialog>Cancel</button>
+      </div>
+    </div>
+  </dialog>
+
   <script>
     (() => {
       "use strict";
@@ -509,6 +554,12 @@
       const textDialogBody = document.getElementById("textDialogBody");
       const gameOverDialog = document.getElementById("gameOverDialog");
       const gameOverBody = document.getElementById("gameOverBody");
+      const scoreTransferDialog = document.getElementById("scoreTransferDialog");
+      const scoreTransferTitle = document.getElementById("scoreTransferTitle");
+      const scoreTransferInstructions = document.getElementById("scoreTransferInstructions");
+      const scoreTransferCode = document.getElementById("scoreTransferCode");
+      const scoreTransferStatus = document.getElementById("scoreTransferStatus");
+      const scoreTransferPrimary = document.getElementById("scoreTransferPrimary");
 
       let settings = loadSettings();
       let sizeKey = settings.size;
@@ -528,6 +579,7 @@
       let moveAnimating = false;
       let animationMark = null;
       let removingTiles = new Set();
+      let scoreTransferMode = "export";
       const sprites = { panel: [[], []], marble: [[], []] };
 
       function loadSettings() {
@@ -796,6 +848,121 @@
           return Array.isArray(scores) ? scores : [];
         } catch (_) {
           return [];
+        }
+      }
+
+      function normalizeScoreEntries(candidate) {
+        if (!Array.isArray(candidate)) return [];
+        return candidate.flatMap(item => {
+          if (!item
+              || !Number.isInteger(item.score)
+              || item.score < 0
+              || item.score > 99999999
+              || typeof item.size !== "string"
+              || item.size.length > 20
+              || (item.date !== undefined && typeof item.date !== "string")) return [];
+          return [{ score: item.score, size: item.size, date: item.date || "" }];
+        });
+      }
+
+      function encodeBase64Url(text) {
+        const bytes = new TextEncoder().encode(text);
+        let binary = "";
+        for (const byte of bytes) binary += String.fromCharCode(byte);
+        return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+      }
+
+      function decodeBase64Url(text) {
+        const normalized = text.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+        const binary = atob(padded);
+        const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+        return new TextDecoder().decode(bytes);
+      }
+
+      function makeScoreBackupCode() {
+        const payload = {
+          version: 1,
+          createdAt: new Date().toISOString(),
+          scores: normalizeScoreEntries(loadScores())
+        };
+        return `SGS1-${encodeBase64Url(JSON.stringify(payload))}`;
+      }
+
+      function readScoreBackupCode(code) {
+        const compact = code.trim().replace(/\s+/g, "");
+        if (!compact.startsWith("SGS1-")) throw new Error("This is not a Same Game score-backup code.");
+        const payload = JSON.parse(decodeBase64Url(compact.slice(5)));
+        if (!payload || payload.version !== 1 || !Array.isArray(payload.scores)) {
+          throw new Error("This score-backup code is not supported.");
+        }
+        const scores = normalizeScoreEntries(payload.scores);
+        if (scores.length !== payload.scores.length) throw new Error("This score-backup code is damaged.");
+        return scores;
+      }
+
+      function mergeScores(importedScores) {
+        const unique = new Map();
+        for (const item of [...normalizeScoreEntries(loadScores()), ...importedScores]) {
+          unique.set(`${item.score}|${item.size}|${item.date}`, item);
+        }
+        const merged = [...unique.values()].sort((a, b) => b.score - a.score).slice(0, 10);
+        localStorage.setItem(SCORES_KEY, JSON.stringify(merged));
+        return merged.length;
+      }
+
+      function showScoreTransfer(mode) {
+        scoreTransferMode = mode;
+        scoreTransferStatus.textContent = "";
+        if (mode === "export") {
+          scoreTransferTitle.textContent = "EXPORT SCORES";
+          scoreTransferInstructions.textContent = "Copy this code into Notes, Mail, or a message before reinstalling the Home Screen app.";
+          scoreTransferCode.value = makeScoreBackupCode();
+          scoreTransferCode.readOnly = true;
+          scoreTransferPrimary.textContent = "Copy";
+        } else {
+          scoreTransferTitle.textContent = "IMPORT SCORES";
+          scoreTransferInstructions.textContent = "Paste a Same Game score-backup code below. Imported scores will be merged with scores already on this device.";
+          scoreTransferCode.value = "";
+          scoreTransferCode.readOnly = false;
+          scoreTransferPrimary.textContent = "Import";
+        }
+        showDialog(scoreTransferDialog);
+        window.setTimeout(() => {
+          scoreTransferCode.focus();
+          if (mode === "export") scoreTransferCode.select();
+        }, 0);
+      }
+
+      async function copyScoreBackup() {
+        const code = scoreTransferCode.value;
+        let copied = false;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+            copied = true;
+          }
+        } catch (_) {}
+        if (!copied) {
+          scoreTransferCode.focus();
+          scoreTransferCode.select();
+          try { copied = document.execCommand("copy"); } catch (_) {}
+        }
+        scoreTransferStatus.textContent = copied
+          ? "Copied. Keep this code somewhere safe."
+          : "Select the code and choose Copy from the iPad menu.";
+      }
+
+      function importScoreBackup() {
+        try {
+          const imported = readScoreBackupCode(scoreTransferCode.value);
+          const count = mergeScores(imported);
+          closeDialog(scoreTransferDialog);
+          showTextDialog("SCORES RESTORED", `<p>${count} high-score entr${count === 1 ? "y is" : "ies are"} now saved on this device.</p>`);
+        } catch (error) {
+          scoreTransferStatus.textContent = error && error.message
+            ? error.message
+            : "That score-backup code could not be read.";
         }
       }
 
@@ -1137,7 +1304,7 @@
             <li>Your current board, score, replay board, and undo history are saved automatically on this device.</li>
             <li>Clearing the entire board earns a 1000-point bonus.</li>
           </ul>
-          <p>Menu includes New Game, Replay, Undo, Score, Information, and Sound. Option includes the original Normal/Large sizes and Panel/Marble characters.</p>`);
+          <p>Menu includes New Game, Replay, Undo, Score, Information, score backup and restore, and Sound. Option includes the original Normal/Large sizes and Panel/Marble characters.</p>`);
       }
 
       function showAbout() {
@@ -1209,6 +1376,8 @@
           if (action === "undo") undo();
           if (action === "scores") showScores();
           if (action === "information") showInformation();
+          if (action === "export-scores") showScoreTransfer("export");
+          if (action === "import-scores") showScoreTransfer("import");
           if (action === "help") showHelp();
           if (action === "about") showAbout();
           if (action === "exit") {
@@ -1247,6 +1416,11 @@
       document.getElementById("gameOverNew").addEventListener("click", () => {
         closeDialog(gameOverDialog);
         newGame();
+      });
+
+      scoreTransferPrimary.addEventListener("click", () => {
+        if (scoreTransferMode === "export") copyScoreBackup();
+        else importScoreBackup();
       });
 
       document.addEventListener("keydown", event => {

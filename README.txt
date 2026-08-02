@@ -40,6 +40,14 @@ recent completed state the next time it opens. Starting a New Game deliberately
 replaces the saved state. Safari website data remains device-local; manually
 clearing that website data will also clear the saved game and high scores.
 
+HIGH-SCORE BACKUP AND RESTORE
+-----------------------------
+Before removing and reinstalling the Home Screen app, open Menu and choose
+Export Scores. Copy the resulting backup code into Notes, Mail, or a message.
+After reinstalling, choose Menu > Import Scores and paste the code. Imported
+entries are merged with scores already on the device, duplicates are removed,
+and the best ten scores are retained.
+
 IPAD CONTROLS
 -------------
 Tap a removable tile group once to highlight it and display its MARK and POINT
@@ -54,7 +62,9 @@ aspect ratios and scale uniformly so the entire board remains visible.
 
 UPDATING AN EXISTING HOME SCREEN ICON
 -------------------------------------
-iPadOS may retain the previous icon artwork after the website is updated. If
-that happens, remove only the Same Game Home Screen icon and add the website to
-the Home Screen again. The redesigned icon keeps the classic Windows window on
-a wider teal desktop margin so the rounded iOS crop does not cut into it.
+iPadOS may retain the previous icon artwork after the website is updated. Do
+not remove the installed Home Screen app when preserving its local scores is
+essential: Home Screen web apps have storage separate from Safari, and a new
+installation is not guaranteed to inherit it. The redesigned icon uses four
+large rounded A-D glass blocks with classic Times lettering and Windows-inspired
+silver bevels, filling the icon cleanly at modern iOS sizes.
