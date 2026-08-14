@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "same-game-ipad-pwa-v10";
+const CACHE_NAME = "same-game-ipad-pwa-v11";
 const APP_SHELL = [
   "./",
   "./index.html",
