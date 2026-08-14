@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "same-game-ipad-pwa-v11";
+const CACHE_NAME = "same-game-ipad-pwa-v12";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -36,6 +36,25 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  if (request.mode === "navigate") {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { cache: "no-store" });
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(request, response.clone());
+        }
+        return response;
+      } catch (error) {
+        const cached = await caches.match(request, { ignoreSearch: true })
+          || await caches.match("./index.html");
+        if (cached) return cached;
+        throw error;
+      }
+    })());
+    return;
+  }
+
   event.respondWith((async () => {
     const cached = await caches.match(request, { ignoreSearch: true });
     if (cached) return cached;
@@ -47,12 +66,6 @@ self.addEventListener("fetch", event => {
         cache.put(request, response.clone());
       }
       return response;
-    } catch (error) {
-      if (request.mode === "navigate") {
-        const fallback = await caches.match("./index.html");
-        if (fallback) return fallback;
-      }
-      throw error;
-    }
+    } catch (error) { throw error; }
   })());
 });

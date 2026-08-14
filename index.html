@@ -131,6 +131,7 @@
     .menu {
       display: none;
       position: absolute;
+      z-index: 100;
       top: 23px;
       left: 0;
       min-width: 196px;
@@ -197,6 +198,7 @@
     .submenu {
       display: none;
       position: absolute;
+      z-index: 110;
       top: -4px;
       left: calc(100% - 3px);
       min-width: 174px;
@@ -209,9 +211,13 @@
       box-shadow: 2px 2px 0 rgba(0,0,0,.45);
     }
 
-    .submenu-wrap:hover > .submenu,
-    .submenu-wrap:focus-within > .submenu,
     .submenu-wrap.touch-open > .submenu { display: block; }
+
+    .submenu-wrap.touch-open > .submenu-label {
+      color: #fff;
+      background: var(--menu-blue);
+      outline: none;
+    }
 
     .board-shell {
       padding: 0;
@@ -1722,11 +1728,24 @@
         });
       }
 
+      function closeSubmenus(except = null) {
+        document.querySelectorAll(".submenu-wrap.touch-open").forEach(wrap => {
+          if (wrap === except) return;
+          wrap.classList.remove("touch-open");
+          wrap.querySelector(".submenu-label").setAttribute("aria-expanded", "false");
+        });
+      }
+
+      function openSubmenu(wrap) {
+        closeSubmenus(wrap);
+        wrap.classList.add("touch-open");
+        wrap.querySelector(".submenu-label").setAttribute("aria-expanded", "true");
+      }
+
       function closeMenus() {
         document.querySelectorAll(".menu.open").forEach(menu => menu.classList.remove("open"));
         document.querySelectorAll(".menu-button").forEach(button => button.setAttribute("aria-expanded", "false"));
-        document.querySelectorAll(".submenu-wrap.touch-open").forEach(wrap => wrap.classList.remove("touch-open"));
-        document.querySelectorAll(".submenu-label").forEach(button => button.setAttribute("aria-expanded", "false"));
+        closeSubmenus();
       }
 
       document.querySelectorAll(".menu-button").forEach(button => {
@@ -1742,19 +1761,32 @@
         });
       });
 
-      document.querySelectorAll(".submenu-label").forEach(button => {
+      document.querySelectorAll(".submenu-wrap").forEach(wrap => {
+        const button = wrap.querySelector(".submenu-label");
+
+        wrap.addEventListener("pointerenter", event => {
+          if (event.pointerType !== "touch") openSubmenu(wrap);
+        });
+
+        button.addEventListener("focus", () => openSubmenu(wrap));
+
         button.addEventListener("click", event => {
           event.stopPropagation();
-          const wrap = button.closest(".submenu-wrap");
-          const willOpen = !wrap.classList.contains("touch-open");
-          document.querySelectorAll(".submenu-wrap.touch-open").forEach(openWrap => {
-            openWrap.classList.remove("touch-open");
-            openWrap.querySelector(".submenu-label").setAttribute("aria-expanded", "false");
-          });
-          if (willOpen) {
-            wrap.classList.add("touch-open");
-            button.setAttribute("aria-expanded", "true");
-          }
+          const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+          if (canHover || !wrap.classList.contains("touch-open")) openSubmenu(wrap);
+          else closeSubmenus();
+        });
+      });
+
+      document.querySelectorAll(".menu").forEach(menu => {
+        menu.addEventListener("pointerleave", event => {
+          if (event.pointerType !== "touch") closeSubmenus();
+        });
+      });
+
+      document.querySelectorAll(".menu > .menu-item, .menu > .menu-separator").forEach(item => {
+        item.addEventListener("pointerenter", event => {
+          if (event.pointerType !== "touch") closeSubmenus();
         });
       });
 
@@ -1885,8 +1917,17 @@
       }
 
       if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        let reloadingForUpdate = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (reloadingForUpdate) return;
+          reloadingForUpdate = true;
+          window.location.reload();
+        });
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+          navigator.serviceWorker.register("./sw.js?v=12", {
+            scope: "./",
+            updateViaCache: "none"
+          }).then(registration => registration.update()).catch(() => {});
         });
       }
     })();
