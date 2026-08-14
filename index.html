@@ -1188,13 +1188,14 @@
               || typeof item.size !== "string"
               || item.size.length > 20
               || (item.date !== undefined && typeof item.date !== "string")) return [];
+          const name = sanitizePlayerName(item.name);
           const isCurrentEntry = item.recordVersion === 2
-            && sanitizePlayerName(item.name)
+            && name
             && isValidScoreDate(item.date);
           return [{
             score: item.score,
             size: item.size,
-            name: isCurrentEntry ? sanitizePlayerName(item.name) : "",
+            name,
             date: isCurrentEntry ? item.date : "",
             recordVersion: isCurrentEntry ? 2 : 1
           }];
@@ -1241,8 +1242,27 @@
       }
 
       function mergeScores(importedScores) {
+        const combined = loadScores();
+
+        for (const imported of importedScores) {
+          let upgradedLegacyEntry = false;
+          if (imported.recordVersion === 1 && imported.name) {
+            const matchIndex = combined.findIndex(existing =>
+              existing.recordVersion === 1
+              && !existing.name
+              && existing.score === imported.score
+              && existing.size === imported.size
+            );
+            if (matchIndex >= 0) {
+              combined[matchIndex] = { ...combined[matchIndex], name: imported.name };
+              upgradedLegacyEntry = true;
+            }
+          }
+          if (!upgradedLegacyEntry) combined.push(imported);
+        }
+
         const unique = new Map();
-        for (const item of [...loadScores(), ...importedScores]) {
+        for (const item of combined) {
           unique.set(`${item.score}|${item.size}|${item.name}|${item.date}|${item.recordVersion}`, item);
         }
         const merged = [...unique.values()].sort((a, b) => b.score - a.score).slice(0, 10);
@@ -1924,7 +1944,7 @@
           window.location.reload();
         });
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js?v=12", {
+          navigator.serviceWorker.register("./sw.js?v=13", {
             scope: "./",
             updateViaCache: "none"
           }).then(registration => registration.update()).catch(() => {});
