@@ -42,11 +42,25 @@ clearing that website data will also clear the saved game and high scores.
 
 HIGH-SCORE BACKUP AND RESTORE
 -----------------------------
+New Top 10 entries ask for the player's name and automatically retain the date.
+The Score window displays rank, name, score, date, and board size. Scores made
+before the name-and-date update remain intact, but their date is deliberately
+shown as "Unavailable" because those entries predate the new score format.
+
 Before removing and reinstalling the Home Screen app, open Menu and choose
 Export Scores. Copy the resulting backup code into Notes, Mail, or a message.
 After reinstalling, choose Menu > Import Scores and paste the code. Imported
 entries are merged with scores already on the device, duplicates are removed,
-and the best ten scores are retained.
+and the best ten scores are retained. The current format also preserves player
+names and dates, while import remains compatible with older SGS1 backup codes.
+
+GLASSES MODE
+------------
+Glasses Mode is enabled by default. It makes critical interface text and touch
+targets much larger, including the menus, MARK/POINT selection display, SCORE,
+Information counts, dialogs, high-score table, name field, and buttons. The
+original tile artwork remains unchanged. Choose Option > Glasses Mode Off to
+return to the smaller classic interface; the preference is saved on the device.
 
 IPAD CONTROLS
 -------------
@@ -57,8 +71,10 @@ settles the board. Tapping a different valid group moves the highlight; tapping
 outside a removable group clears it. Tap Menu, Option, or Help to open the
 original menus. Their touch targets become slightly larger on touch screens
 while retaining the classic Windows appearance. The Size and Character
-submenus are also tap-enabled. Normal and Large boards retain their original
-aspect ratios and scale uniformly so the entire board remains visible.
+submenus are also tap-enabled. New installations start with the Large 25 x 15
+board. A previously saved game still resumes in its saved size so an update does
+not discard progress. Normal and Large boards retain their original aspect
+ratios and scale uniformly so the entire board remains visible.
 
 UPDATING AN EXISTING HOME SCREEN ICON
 -------------------------------------

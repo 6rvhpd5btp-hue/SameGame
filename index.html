@@ -268,6 +268,8 @@
       color: #000;
     }
 
+    dialog.wide-dialog { width: min(760px, calc(100vw - 24px)); }
+
     dialog::backdrop { background: rgba(0,0,0,.32); }
 
     .dialog-window {
@@ -331,14 +333,21 @@
 
     .score-table {
       width: 100%;
+      min-width: 650px;
       border-collapse: collapse;
       font: 700 14px/1.6 "Courier New", monospace;
+      font-variant-numeric: tabular-nums;
     }
 
-    .score-table td { padding: 1px 6px; }
-    .score-table td:first-child { width: 38px; text-align: right; }
-    .score-table td:nth-child(2) { text-align: right; }
-    .score-table td:last-child { text-align: left; }
+    .score-table-wrap { width: 100%; overflow-x: auto; }
+    .score-table th,
+    .score-table td { padding: 2px 7px; white-space: nowrap; }
+    .score-table th { border-bottom: 1px solid #808080; text-align: left; }
+    .score-table .score-rank { width: 42px; text-align: right; }
+    .score-table .score-name { width: 150px; text-align: left; }
+    .score-table .score-value { width: 90px; text-align: right; }
+    .score-table .score-date { width: 170px; text-align: left; }
+    .score-table .score-size { width: 90px; text-align: left; }
 
     .color-counts {
       width: 310px;
@@ -411,6 +420,40 @@
       font-weight: 700;
     }
 
+    .high-score-value {
+      margin: 0 0 14px;
+      text-align: center;
+      font: 700 22px/1.2 "Courier New", monospace;
+    }
+
+    .name-entry-label {
+      display: block;
+      margin: 0 0 6px;
+      font-weight: 700;
+    }
+
+    .name-entry-input {
+      width: 100%;
+      min-height: 40px;
+      padding: 6px 8px;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      font-size: 18px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .name-entry-status {
+      min-height: 22px;
+      margin: 7px 0 0;
+      font-weight: 700;
+    }
+
     .about-mark {
       width: 54px;
       height: 54px;
@@ -466,9 +509,182 @@
       .color-counts { font-size: 16px; }
       .win-button { min-height: 36px; font-size: 14px; }
     }
+
+    body.glasses-mode .titlebar {
+      height: 34px;
+      padding: 4px 5px 4px 7px;
+      font-size: 18px;
+    }
+
+    body.glasses-mode .title-button {
+      width: 26px;
+      height: 26px;
+      font-size: 14px;
+    }
+
+    body.glasses-mode .menubar {
+      height: 43px;
+      padding: 0 5px;
+    }
+
+    body.glasses-mode .menu-button {
+      height: 41px;
+      padding: 7px 13px;
+      font-size: 21px;
+      line-height: 27px;
+    }
+
+    body.glasses-mode .menu {
+      top: 41px;
+      min-width: 290px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+    }
+
+    body.glasses-mode .menu-item,
+    body.glasses-mode .submenu-label {
+      min-height: 48px;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      padding: 9px 11px;
+      font-size: 20px;
+      line-height: 28px;
+    }
+
+    body.glasses-mode .submenu {
+      min-width: 270px;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+    }
+
+    body.glasses-mode .check { width: 24px; }
+
+    body.glasses-mode .arrow {
+      border-top-width: 6px;
+      border-bottom-width: 6px;
+      border-left-width: 9px;
+    }
+
+    body.glasses-mode .statusbar {
+      height: 47px;
+      grid-template-columns: minmax(0, 1fr) 250px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    body.glasses-mode .status-panel {
+      padding: 3px 8px;
+      font-size: 19px;
+    }
+
+    body.glasses-mode dialog {
+      width: min(620px, calc(100vw - 20px));
+    }
+
+    body.glasses-mode dialog.wide-dialog {
+      width: min(900px, calc(100vw - 20px));
+    }
+
+    body.glasses-mode .dialog-title {
+      height: 38px;
+      padding: 6px 8px;
+      font-size: 20px;
+      line-height: 24px;
+    }
+
+    body.glasses-mode .dialog-body {
+      padding: 22px 24px 18px;
+      font-size: 20px;
+      line-height: 1.55;
+    }
+
+    body.glasses-mode .dialog-actions {
+      gap: 14px;
+      padding: 0 20px 20px;
+    }
+
+    body.glasses-mode .win-button {
+      min-width: 116px;
+      min-height: 50px;
+      padding: 8px 16px;
+      font-size: 19px;
+    }
+
+    body.glasses-mode .score-table {
+      min-width: 680px;
+      font-size: 18px;
+      line-height: 1.65;
+    }
+
+    body.glasses-mode .color-counts {
+      width: 470px;
+      font-size: 21px;
+    }
+
+    body.glasses-mode .color-count-game-letter { font-size: 27px; }
+
+    body.glasses-mode .count-scale {
+      grid-template-columns: repeat(5, 16px);
+      gap: 6px;
+    }
+
+    body.glasses-mode .count-scale-box {
+      width: 16px;
+      height: 16px;
+    }
+
+    body.glasses-mode .score-transfer-code {
+      min-height: 160px;
+      font-size: 17px;
+    }
+
+    body.glasses-mode .high-score-value { font-size: 28px; }
+
+    body.glasses-mode .name-entry-input {
+      min-height: 54px;
+      padding: 9px 11px;
+      font-size: 23px;
+    }
+
+    @media (max-width: 600px) {
+      body.glasses-mode .statusbar {
+        height: 88px;
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(2, 40px);
+      }
+
+      body.glasses-mode .status-panel {
+        justify-content: center;
+        font-size: 17px;
+      }
+
+      body.glasses-mode .menu-button {
+        padding-right: 9px;
+        padding-left: 9px;
+        font-size: 19px;
+      }
+
+      body.glasses-mode .dialog-body {
+        padding-right: 14px;
+        padding-left: 14px;
+      }
+
+      body.glasses-mode .color-counts { font-size: 18px; }
+
+      body.glasses-mode .color-count-row { column-gap: 4px; }
+
+      body.glasses-mode .count-scale {
+        grid-template-columns: repeat(5, 12px);
+        gap: 3px;
+      }
+
+      body.glasses-mode .count-scale-box {
+        width: 12px;
+        height: 12px;
+      }
+    }
   </style>
 </head>
-<body>
+<body class="glasses-mode">
   <main class="window" id="gameWindow" aria-label="Same Game for Windows recreation">
     <div class="titlebar">
       <span>Same Game for Windows</span>
@@ -516,6 +732,9 @@
               <button class="menu-item radio-item" type="button" data-setting="character" data-value="marble"><span class="check"></span><span><u>M</u>arble</span><span></span></button>
             </div>
           </div>
+          <div class="menu-separator"></div>
+          <button class="menu-item radio-item" type="button" data-setting="glasses" data-value="on"><span class="check"></span><span><u>G</u>lasses Mode On</span><span></span></button>
+          <button class="menu-item radio-item" type="button" data-setting="glasses" data-value="off"><span class="check"></span><span>Glasses Mode <u>O</u>ff</span><span></span></button>
         </div>
       </div>
 
@@ -530,7 +749,7 @@
 
     <section class="board-shell">
       <div class="board-frame" id="boardFrame">
-        <canvas id="board" width="640" height="320" aria-label="Same Game board"></canvas>
+        <canvas id="board" width="800" height="480" aria-label="Same Game board"></canvas>
       </div>
     </section>
 
@@ -557,6 +776,21 @@
         <button class="win-button" type="button" data-close-dialog>OK</button>
       </div>
     </div>
+  </dialog>
+
+  <dialog id="highScoreDialog">
+    <form class="dialog-window" id="highScoreForm">
+      <div class="dialog-title">NEW HIGH SCORE</div>
+      <div class="dialog-body">
+        <p class="high-score-value" id="highScoreValue">SCORE : 0</p>
+        <label class="name-entry-label" for="highScoreName">Enter your name:</label>
+        <input class="name-entry-input" id="highScoreName" name="playerName" type="text" maxlength="20" autocomplete="name" autocapitalize="words" enterkeyhint="done" required>
+        <p class="name-entry-status" id="highScoreStatus" aria-live="polite"></p>
+      </div>
+      <div class="dialog-actions">
+        <button class="win-button" type="submit">Save Score</button>
+      </div>
+    </form>
   </dialog>
 
   <dialog id="scoreTransferDialog">
@@ -602,6 +836,11 @@
       const textDialogBody = document.getElementById("textDialogBody");
       const gameOverDialog = document.getElementById("gameOverDialog");
       const gameOverBody = document.getElementById("gameOverBody");
+      const highScoreDialog = document.getElementById("highScoreDialog");
+      const highScoreForm = document.getElementById("highScoreForm");
+      const highScoreValue = document.getElementById("highScoreValue");
+      const highScoreName = document.getElementById("highScoreName");
+      const highScoreStatus = document.getElementById("highScoreStatus");
       const scoreTransferDialog = document.getElementById("scoreTransferDialog");
       const scoreTransferTitle = document.getElementById("scoreTransferTitle");
       const scoreTransferInstructions = document.getElementById("scoreTransferInstructions");
@@ -611,8 +850,10 @@
 
       let settings = loadSettings();
       let sizeKey = settings.size;
+      let preferredSizeKey = settings.size;
       let character = settings.character;
       let soundOn = settings.sound;
+      let glassesMode = settings.glasses;
       let board = [];
       let initialBoard = [];
       let history = [];
@@ -628,16 +869,19 @@
       let animationMark = null;
       let removingTiles = new Set();
       let scoreTransferMode = "export";
+      let pendingHighScoreDate = "";
       const sprites = { panel: [[], []], marble: [[], []] };
 
       function loadSettings() {
-        const defaults = { size: "normal", character: "panel", sound: true };
+        const defaults = { version: 2, size: "large", character: "panel", sound: true, glasses: true };
         try {
           const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
           return {
-            size: parsed.size === "large" ? "large" : "normal",
+            version: 2,
+            size: parsed.version === 2 && parsed.size === "normal" ? "normal" : "large",
             character: parsed.character === "marble" ? "marble" : "panel",
-            sound: parsed.sound !== false
+            sound: parsed.sound !== false,
+            glasses: parsed.version === 2 ? parsed.glasses !== false : true
           };
         } catch (_) {
           return defaults;
@@ -645,8 +889,13 @@
       }
 
       function saveSettings() {
-        settings = { size: sizeKey, character, sound: soundOn };
+        settings = { version: 2, size: preferredSizeKey, character, sound: soundOn, glasses: glassesMode };
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (_) {}
+      }
+
+      function applyGlassesMode() {
+        document.body.classList.toggle("glasses-mode", glassesMode);
+        document.body.dataset.glassesMode = glassesMode ? "on" : "off";
       }
 
       function cloneBoard(source) {
@@ -705,7 +954,6 @@
               || typeof state.gameOverRecorded !== "boolean") return false;
 
           sizeKey = savedSize;
-          settings.size = sizeKey;
           board = cloneBoard(state.board);
           initialBoard = cloneBoard(state.initialBoard);
           history = state.history.map(entry => ({
@@ -757,6 +1005,8 @@
 
       function newGame() {
         cancelMoveAnimation();
+        const sizeChanged = sizeKey !== preferredSizeKey;
+        sizeKey = preferredSizeKey;
         board = makeRandomBoard();
         initialBoard = cloneBoard(board);
         history = [];
@@ -764,9 +1014,11 @@
         hoveredGroup = [];
         touchSelectionKey = "";
         gameOverRecorded = false;
+        pendingHighScoreDate = "";
         clearBonusAwarded = false;
         updateStatus();
-        draw();
+        if (sizeChanged) fitBoard();
+        else draw();
         saveGameState();
       }
 
@@ -778,6 +1030,7 @@
         hoveredGroup = [];
         touchSelectionKey = "";
         gameOverRecorded = false;
+        pendingHighScoreDate = "";
         clearBonusAwarded = false;
         updateStatus();
         draw();
@@ -893,10 +1146,18 @@
       function loadScores() {
         try {
           const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || "[]");
-          return Array.isArray(scores) ? scores : [];
+          return normalizeScoreEntries(scores);
         } catch (_) {
           return [];
         }
+      }
+
+      function sanitizePlayerName(value) {
+        return String(value || "").replace(/[\u0000-\u001f\u007f]/g, "").trim().replace(/\s+/g, " ").slice(0, 20);
+      }
+
+      function isValidScoreDate(value) {
+        return typeof value === "string" && value.length <= 40 && Number.isFinite(Date.parse(value));
       }
 
       function normalizeScoreEntries(candidate) {
@@ -909,7 +1170,16 @@
               || typeof item.size !== "string"
               || item.size.length > 20
               || (item.date !== undefined && typeof item.date !== "string")) return [];
-          return [{ score: item.score, size: item.size, date: item.date || "" }];
+          const isCurrentEntry = item.recordVersion === 2
+            && sanitizePlayerName(item.name)
+            && isValidScoreDate(item.date);
+          return [{
+            score: item.score,
+            size: item.size,
+            name: isCurrentEntry ? sanitizePlayerName(item.name) : "",
+            date: isCurrentEntry ? item.date : "",
+            recordVersion: isCurrentEntry ? 2 : 1
+          }];
         });
       }
 
@@ -930,18 +1200,21 @@
 
       function makeScoreBackupCode() {
         const payload = {
-          version: 1,
+          version: 2,
           createdAt: new Date().toISOString(),
-          scores: normalizeScoreEntries(loadScores())
+          scores: loadScores()
         };
-        return `SGS1-${encodeBase64Url(JSON.stringify(payload))}`;
+        return `SGS2-${encodeBase64Url(JSON.stringify(payload))}`;
       }
 
       function readScoreBackupCode(code) {
         const compact = code.trim().replace(/\s+/g, "");
-        if (!compact.startsWith("SGS1-")) throw new Error("This is not a Same Game score-backup code.");
+        const isVersion2 = compact.startsWith("SGS2-");
+        const isVersion1 = compact.startsWith("SGS1-");
+        if (!isVersion1 && !isVersion2) throw new Error("This is not a Same Game score-backup code.");
         const payload = JSON.parse(decodeBase64Url(compact.slice(5)));
-        if (!payload || payload.version !== 1 || !Array.isArray(payload.scores)) {
+        const expectedVersion = isVersion2 ? 2 : 1;
+        if (!payload || payload.version !== expectedVersion || !Array.isArray(payload.scores)) {
           throw new Error("This score-backup code is not supported.");
         }
         const scores = normalizeScoreEntries(payload.scores);
@@ -951,8 +1224,8 @@
 
       function mergeScores(importedScores) {
         const unique = new Map();
-        for (const item of [...normalizeScoreEntries(loadScores()), ...importedScores]) {
-          unique.set(`${item.score}|${item.size}|${item.date}`, item);
+        for (const item of [...loadScores(), ...importedScores]) {
+          unique.set(`${item.score}|${item.size}|${item.name}|${item.date}|${item.recordVersion}`, item);
         }
         const merged = [...unique.values()].sort((a, b) => b.score - a.score).slice(0, 10);
         localStorage.setItem(SCORES_KEY, JSON.stringify(merged));
@@ -1014,24 +1287,56 @@
         }
       }
 
-      function recordScore() {
+      function qualifiesForBestTen() {
         if (gameOverRecorded || score <= 0) return false;
+        const previous = loadScores().sort((a, b) => b.score - a.score);
+        return previous.length < 10 || score >= previous[9].score;
+      }
+
+      function recordScore(playerName) {
+        if (gameOverRecorded || score <= 0) return false;
+        const name = sanitizePlayerName(playerName);
+        if (!name) return false;
         const previous = loadScores();
-        const entry = { score, size: SIZES[sizeKey].label, date: new Date().toISOString() };
-        const scores = [...previous, entry].sort((a, b) => b.score - a.score).slice(0, 10);
+        const entry = {
+          score,
+          size: SIZES[sizeKey].label,
+          name,
+          date: pendingHighScoreDate || new Date().toISOString(),
+          recordVersion: 2
+        };
+        const scores = [entry, ...previous].sort((a, b) => b.score - a.score).slice(0, 10);
         const madeBestTen = scores.includes(entry);
         try { localStorage.setItem(SCORES_KEY, JSON.stringify(scores)); } catch (_) {}
         gameOverRecorded = true;
+        pendingHighScoreDate = "";
         return madeBestTen;
       }
 
-      function finishGame() {
-        const madeBestTen = recordScore();
+      function showGameOver(madeBestTen) {
         saveGameState();
         const clearText = board.length === 0 ? "<p><strong>BOARD CLEARED — 1000 POINT BONUS</strong></p>" : "";
         const bestText = madeBestTen ? "<p><strong>Your Score is in BEST 10 !!</strong></p>" : "";
         gameOverBody.innerHTML = `${clearText}<p style="text-align:center;font-size:18px"><strong>SCORE : ${String(score).padStart(5, " ")}</strong></p>${bestText}`;
         showDialog(gameOverDialog);
+      }
+
+      function finishGame() {
+        if (highScoreDialog.open || gameOverDialog.open) return;
+        if (!gameOverRecorded && qualifiesForBestTen()) {
+          pendingHighScoreDate = pendingHighScoreDate || new Date().toISOString();
+          highScoreValue.textContent = `SCORE : ${score}`;
+          highScoreName.value = "";
+          highScoreStatus.textContent = "";
+          showDialog(highScoreDialog);
+          window.setTimeout(() => highScoreName.focus(), 0);
+          return;
+        }
+        if (!gameOverRecorded) {
+          gameOverRecorded = true;
+          saveGameState();
+        }
+        showGameOver(false);
       }
 
       function countsByColor() {
@@ -1310,9 +1615,20 @@
         } catch (_) {}
       }
 
-      function showTextDialog(title, html) {
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, character => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;"
+        })[character]);
+      }
+
+      function showTextDialog(title, html, wide = false) {
         textDialogTitle.textContent = title;
         textDialogBody.innerHTML = html;
+        textDialog.classList.toggle("wide-dialog", wide);
         showDialog(textDialog);
       }
 
@@ -1346,9 +1662,14 @@
         const scores = loadScores();
         const rows = Array.from({ length: 10 }, (_, i) => {
           const item = scores[i];
-          return `<tr><td>${i + 1}.</td><td>${item ? String(item.score).padStart(5, " ") : "-----"}</td><td>${item ? item.size : ""}</td></tr>`;
+          const date = item && item.recordVersion === 2 && isValidScoreDate(item.date)
+            ? new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" }).format(new Date(item.date))
+            : item
+              ? "Unavailable"
+              : "";
+          return `<tr><td class="score-rank">${i + 1}.</td><td class="score-name">${item ? escapeHtml(item.name || "Unknown") : "—"}</td><td class="score-value">${item ? item.score : "-----"}</td><td class="score-date">${date}</td><td class="score-size">${item ? escapeHtml(item.size) : ""}</td></tr>`;
         }).join("");
-        showTextDialog("SCORE BEST 10", `<table class="score-table" aria-label="Best ten scores"><tbody>${rows}</tbody></table>`);
+        showTextDialog("SCORE BEST 10", `<div class="score-table-wrap"><table class="score-table" aria-label="Best ten scores"><thead><tr><th class="score-rank">#</th><th class="score-name">Name</th><th class="score-value">Score</th><th class="score-date">Date</th><th class="score-size">Board</th></tr></thead><tbody>${rows}</tbody></table></div>`, true);
       }
 
       function showHelp() {
@@ -1362,7 +1683,9 @@
             <li>Your current board, score, replay board, and undo history are saved automatically on this device.</li>
             <li>Clearing the entire board earns a 1000-point bonus.</li>
           </ul>
-          <p>Menu includes New Game, Replay, Undo, Score, Information, score backup and restore, and Sound. Option includes the original Normal/Large sizes and Panel/Marble characters.</p>`);
+          <p>New Top 10 scores save the player name and date. Scores created before this update show an unavailable date.</p>
+          <p>Glasses Mode is on by default and greatly enlarges critical text and controls. It can be turned off under Option. New installations begin with the Large board; saved games still resume in their original size.</p>
+          <p>Menu includes New Game, Replay, Undo, Score, Information, score backup and restore, and Sound. Option includes Normal/Large sizes, Panel/Marble characters, and Glasses Mode.</p>`);
       }
 
       function showAbout() {
@@ -1381,6 +1704,7 @@
           if (setting === "size") checked = value === sizeKey;
           if (setting === "character") checked = value === character;
           if (setting === "sound") checked = (value === "on") === soundOn;
+          if (setting === "glasses") checked = (value === "on") === glassesMode;
           item.querySelector(".check").textContent = checked ? "✓" : "";
         });
       }
@@ -1449,7 +1773,8 @@
         item.addEventListener("click", () => {
           const setting = item.dataset.setting;
           const value = item.dataset.value;
-          if (setting === "size" && value !== sizeKey) {
+          if (setting === "size" && (value !== sizeKey || value !== preferredSizeKey)) {
+            preferredSizeKey = value;
             sizeKey = value;
             saveSettings();
             fitBoard();
@@ -1461,6 +1786,11 @@
           } else if (setting === "sound") {
             soundOn = value === "on";
             saveSettings();
+          } else if (setting === "glasses") {
+            glassesMode = value === "on";
+            applyGlassesMode();
+            saveSettings();
+            window.requestAnimationFrame(fitBoard);
           }
           updateMenuChecks();
           closeMenus();
@@ -1476,6 +1806,26 @@
         newGame();
       });
 
+      highScoreForm.addEventListener("submit", event => {
+        event.preventDefault();
+        const name = sanitizePlayerName(highScoreName.value);
+        if (!name) {
+          highScoreStatus.textContent = "Please enter a name before saving.";
+          highScoreName.focus();
+          return;
+        }
+        const madeBestTen = recordScore(name);
+        saveGameState();
+        closeDialog(highScoreDialog);
+        showGameOver(madeBestTen);
+      });
+
+      highScoreDialog.addEventListener("cancel", event => {
+        event.preventDefault();
+        highScoreStatus.textContent = "Enter a name to save this Top 10 score.";
+        highScoreName.focus();
+      });
+
       scoreTransferPrimary.addEventListener("click", () => {
         if (scoreTransferMode === "export") copyScoreBackup();
         else importScoreBackup();
@@ -1483,6 +1833,12 @@
 
       document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
+          if (highScoreDialog.open) {
+            event.preventDefault();
+            highScoreStatus.textContent = "Enter a name to save this Top 10 score.";
+            highScoreName.focus();
+            return;
+          }
           closeMenus();
           document.querySelectorAll("dialog[open]").forEach(closeDialog);
           return;
@@ -1503,6 +1859,7 @@
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") saveGameState();
       });
+      applyGlassesMode();
       buildSprites();
       if (restoreGameState()) {
         fitBoard();
